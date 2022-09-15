@@ -13,7 +13,7 @@ class Fields extends Meter
 {
     public function Contents($body, $title = '')
     {
-        $len = 2 * 24 * 3600;
+        $len = 30 * 3600;
         $start = $this->Get('start', date('Y-m-d', time() - $len));
         $time = strtotime($start);
         $start = date('Y-m-d', $time);

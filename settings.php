@@ -19,6 +19,7 @@ class Settings extends Page
         parent::HandlePost();
         if ($_POST) {
             $charges = array();
+            $c_list = array('e6_', 'e17_', 'e21_', 'e24_', 'i_');
             foreach ($_POST as $key => $val) {
                 $pk = substr($key, 0, 2);
                 if ($key == 'refresh_token') {
@@ -38,17 +39,13 @@ class Settings extends Page
                         $this->error = 'Datoformat skal være åååå-mmm-dd';
                         return;
                     }
-                    $ek = str_replace('d_', 'e_', $key);
-                    $ev = $this->Cookie($ek);
-                    $ev = (float)str_replace(',', '.', $ev);
-                    $ev = str_replace('.', ',', $ev);
-
-                    $ik = str_replace('d_', 'i_', $key);
-                    $iv = $this->Cookie($ik);
-                    $iv = (float)str_replace(',', '.', $iv);
-                    $iv = str_replace('.', ',', $iv);
-
-                    $charges[$val] = array($ev, $iv);
+                    foreach ($c_list as $c) {
+                        $k = str_replace('d_', $c, $key);
+                        $v = $this->Cookie($k);
+                        $v = (float)str_replace(',', '.', $v);
+                        $v = str_replace('.', ',', $v);
+                        $charges[$val][] = $v;
+                    }
                 }
             }
             ksort($charges);
@@ -56,15 +53,19 @@ class Settings extends Page
             $values = array_values($charges);
             for ($i = 0; $i < $this->charge_count; $i++) {
                 if (empty($keys[$i])) {
-                    $dv = $ev = $iv = '';
+                    $dv = '';
                 } else {
                     $dv = $keys[$i];
-                    $ev = $values[$i][0];
-                    $iv = $values[$i][1];
                 }
                 $this->SetCookie('d_charge_'.$i, $dv);
-                $this->SetCookie('e_charge_'.$i, $ev);
-                $this->SetCookie('i_charge_'.$i, $iv);
+                foreach ($c_list as $c) {
+                    if (empty($values[$i])) {
+                        $v = '';
+                    } else {
+                        $v = array_shift($values[$i]);
+                    }
+                    $this->SetCookie($c.'charge_'.$i, $v);
+                }
             }
             $url = 'https://api.eloverblik.dk/customerapi/api/token';
             $val = $this->Cookie('refresh_token');
@@ -93,15 +94,22 @@ class Settings extends Page
         $this->InputField($div, 'Prisområde (DK1/DK2)', 'price_area',
             'DK1 er Danmark vest, DK2 er Danmark øst');
         $div->Center()->H2('Omkostninger ekskl. moms');
+        $div->Br();
         $table = $div->Table();
         $tr = $table->Tr();
-        $th = $tr->Th('Startdato');
-        $th = $tr->Th('Pr. kWh');
-        $th = $tr->Th('Pr. time');
+        $th = $tr->Th()->Center('Startdato');
+        $th = $tr->Th()->Center('Pr. kWh<br>06-17');
+        $th = $tr->Th()->Center('Pr. kWh<br>17-21');
+        $th = $tr->Th()->Center('Pr. kWh<br>21-24');
+        $th = $tr->Th()->Center('Pr. kWh<br>24-06');
+        $th = $tr->Th()->Center('Pr. time');
         for ($i = 0; $i < $this->charge_count; $i++) {
             $tr = $table->Tr();
             $this->InputCell($tr, $name = 'd_charge_'.$i);
-            $this->InputCell($tr, $name = 'e_charge_'.$i);
+            $this->InputCell($tr, $name = 'e6_charge_'.$i);
+            $this->InputCell($tr, $name = 'e17_charge_'.$i);
+            $this->InputCell($tr, $name = 'e21_charge_'.$i);
+            $this->InputCell($tr, $name = 'e24_charge_'.$i);
             $this->InputCell($tr, $name = 'i_charge_'.$i);
         }
         $div->Br();

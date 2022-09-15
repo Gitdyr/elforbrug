@@ -45,7 +45,16 @@ class Meter extends Page
         for ($i = 0; $i < $this->charge_count; $i++) {
             $dv = $this->Cookie('d_charge_'.$i);
             if ($dv && $date >= $dv) {
-                $ev = $this->Cookie('e_charge_'.$i);
+                $hour = (int)substr($date, 11, 2);
+                if ($hour >= 6 && $hour < 17) {
+                    $ev = $this->Cookie('e6_charge_'.$i);
+                } elseif ($hour >= 17 && $hour < 21) {
+                    $ev = $this->Cookie('e17_charge_'.$i);
+                } elseif ($hour >= 21) {
+                    $ev = $this->Cookie('e21_charge_'.$i);
+                } else {
+                    $ev = $this->Cookie('e24_charge_'.$i);
+                }
                 $iv = $this->Cookie('i_charge_'.$i);
             }
         }
@@ -83,13 +92,14 @@ class Meter extends Page
         $prices = $this->Prices($interval->start, $sstop);
         $qty_sum = 0;
         $cost_sum = 0;
+        // $this->Dump($result->Period);
         foreach ($result->Period as $period) {
             foreach ($period->Point as $record) {
                 list($time, $price) = current($prices);
                 $time = strtotime($time);
                 $date = date('Y-m-d H:i:s', $time);
                 $qty = $record->{'out_Quantity.quantity'};
-                $costs[$date] = array($qty, $price);
+                $costs[] = array($date, $qty, $price);
                 next($prices);
             }
         }
@@ -97,7 +107,7 @@ class Meter extends Page
             list($time, $price) = current($prices);
             $time = strtotime($time);
             $date = date('Y-m-d H:i:s', $time);
-            $costs[$date] = array(0, $price);
+            $costs[] = array($date, 0, $price);
             if (!next($prices)) {
                 break;
             }
@@ -137,41 +147,37 @@ class Meter extends Page
         $plen = strlen($pattern[0]);
         $poff = 19 - $plen;
         $labels = array();
+        $keys = array();
         $end_key = array_keys($costs);
         $end_key = end($end_key);
         $count = 0;
         $ndx = 0;
         $start_ndx = 0;
         $stop_ndx = 0;
-        foreach ($costs as $key => list($qty, $price)) {
+        foreach ($costs as list($key, $qty, $price)) {
             if ($key < $start) {
                 $start_ndx = $ndx;
             }
             if ($key <= $stop) {
                 $stop_ndx = $ndx;
             }
-            if (empty($title)) {
-                $title = $key.' - ';
-            }
-            if (substr($key, 11) == '00:00:00') {
-                list($ev, $iv) = $this->GetCharges($key);
-            }
+            list($ev, $iv) = $this->GetCharges($key);
             $cost = $qty * $price;
             $cost += $qty * $ev + $iv;
             if (in_array(substr($key, $poff, $plen), $pattern)) {
                 if ($cost_sum !== null) {
-                    $cost_data[$label] = $cost_sum;
-                    $ev_data[$label] = $ev_sum;
-                    $iv_data[$label] = $iv_sum;
-                    $qty_data[$label] = $qty_sum;
-                    $price_data[$label] = $price_sum / $count;
-                    $charge_data[$label] = $charge_sum / $count;
+                    $cost_data[] = $cost_sum;
+                    $ev_data[] = $ev_sum;
+                    $iv_data[] = $iv_sum;
+                    $qty_data[] = $qty_sum;
+                    $price_data[] = $price_sum / $count;
+                    $charge_data[] = $charge_sum / $count;
                     if ($spot) {
                         $vat = ($price_sum + $charge_sum) / $count * 0.25;
                     } else {
                         $vat = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
                     }
-                    $vat_data[$label] = $vat;
+                    $vat_data[] = $vat;
                     $cost_sum = 0;
                     $ev_sum = 0;
                     $iv_sum = 0;
@@ -182,9 +188,11 @@ class Meter extends Page
                     $ndx++;
                 }
                 $labels[] = substr($key, $loff, $llen);
+                $keys[] = $key;
             }
             if (!$labels) {
                 $labels[] = substr($key, $loff, $llen);
+                $keys[] = $key;
             }
             $cost_sum += $cost;
             $ev_sum += $ev * $qty;
@@ -192,20 +200,22 @@ class Meter extends Page
             $qty_sum += $qty;
             $price_sum += $price;
             $charge_sum += $ev;
-            $label = $key;
             $count++;
         }
         if ($cost_sum || $qty_sum || $price_sum) {
-            $label = $key.'+';
-            $cost_data[$label] = $cost_sum;
-            $ev_data[$label] = $ev_sum;
-            $iv_data[$label] = $iv_sum;
-            $vat_data[$label] = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
-            $qty_data[$label] = $qty_sum;
-            $price_data[$label] = $price_sum / $count;
-            $charge_data[$label] = $charge_sum / $count;
+            $cost_data[] = $cost_sum;
+            $ev_data[] = $ev_sum;
+            $iv_data[] = $iv_sum;
+            $qty_data[] = $qty_sum;
+            $price_data[] = $price_sum / $count;
+            $charge_data[] = $charge_sum / $count;
+            if ($spot) {
+                $vat = ($price_sum + $charge_sum) / $count * 0.25;
+            } else {
+                $vat = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
+            }
+            $vat_data[] = $vat;
         }
-        $title .= sprintf("%s", $stop);
 
 	$cost_sum = array_sum($cost_data);
         $qty_sum = array_sum($qty_data);
@@ -288,6 +298,7 @@ class Meter extends Page
         $canvas->id($id);
 	$node->Script("
 	    var labels = ".json_encode($labels).";
+	    var keys = ".json_encode($keys).";
 	    var cost_data = ".json_encode(array_values($cost_data)).";
 	    var ev_data = ".json_encode(array_values($ev_data)).";
 	    var iv_data = ".json_encode(array_values($iv_data)).";
@@ -295,7 +306,6 @@ class Meter extends Page
 	    var qty_data = ".json_encode(array_values($qty_data)).";
 	    var price_data = ".json_encode(array_values($price_data)).";
 	    var charge_data = ".json_encode(array_values($charge_data)).";
-	    var title = '".$title."';
 	    var click_in = '".$click_in."';
 	    var click_out = '".$click_out."';
             var meter = ".$meter.";
@@ -421,7 +431,7 @@ class Meter extends Page
                     plugins: {
                         title: {
                             display: true,
-                            text: title
+                            text: ''
                         },
                         tooltip: {
                             mode: 'index',
@@ -468,6 +478,9 @@ class Meter extends Page
 
             function ButtonRefresh()
             {
+                config.options.plugins.title.text =
+                    keys[start_ndx] + ' - ' +
+                    keys[stop_ndx - 1].substr(0, 14) + '59:59';
                 var buttons = document.querySelectorAll('.btn');
                 buttons.forEach(function (button) {
                     if (button.classList.contains('float-start')) {
@@ -487,7 +500,7 @@ class Meter extends Page
                         }
                     }
                 })
-
+                chart.update();
             }
 
             ButtonRefresh();
@@ -504,7 +517,6 @@ class Meter extends Page
                     data.datasets[i].data =
                         data.datasets[i].full_data.slice(start_ndx, stop_ndx);
                 }
-                chart.update();
                 ButtonRefresh();
             }
 
@@ -520,7 +532,6 @@ class Meter extends Page
                     data.datasets[i].data =
                         data.datasets[i].full_data.slice(start_ndx, stop_ndx);
                 }
-                chart.update();
                 ButtonRefresh();
             }
 

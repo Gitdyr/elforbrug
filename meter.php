@@ -189,6 +189,8 @@ class Meter extends Page
 
 	$cost_sum = array_sum($cost_data);
         $qty_sum = array_sum($qty_data);
+        $ev_sum = array_sum($ev_data);
+        $iv_sum = array_sum($iv_data);
         if ($cost_sum && $qty_sum) {
             $cost_mean = 5 * array_sum($vat_data) / array_sum($qty_data);
         } else {
@@ -248,6 +250,8 @@ class Meter extends Page
 	    var click_script = '".$click_script."';
             var meter = ".$meter.";
             var spot = ".$spot.";
+            var ev_sum = ".$ev_sum.";
+            var iv_sum = ".$iv_sum.";
             var spot_color = 'rgb(200, 29, 32)';
             var iv_color = 'rgb(55, 99, 32)';
             var ev_color = 'rgb(75, 129, 162)';
@@ -297,6 +301,14 @@ class Meter extends Page
 		    data: qty_data
                 }]
 	    };
+
+            if (ev_sum == 0) {
+                data.datasets.splice(2, 1);
+            }
+
+            if (iv_sum == 0) {
+                data.datasets.splice(1, 1);
+            }
 
             if (meter) {
                 data.datasets = [{

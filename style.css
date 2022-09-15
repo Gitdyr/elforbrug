@@ -1,0 +1,17 @@
+/**
+ * (c) Kjeld Borch Egevang
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+div.card, header {
+    margin-bottom: 20px;
+}
+
+.card-title {
+    background-color: #e0e0e0;
+    padding: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}

@@ -201,42 +201,58 @@ class Meter extends Page
                 $val *= $cost_mean;
             }
         }
-	// $values = array_values($qty_data);
-        $node->Script()->src('chart.js');
-	$id = 'myChart';
-        $div = $node->Div();
-        $canvas = $div->Canvas();
-        $canvas->id($id);
         if (substr($script, 1, 1) == '_') {
             $prefix = substr($script, 0, 2);
         } else {
             $prefix = '';
         }
+        switch ($prefix) {
+            case '':
+                $description = 'Udgift';
+                break;
+            case 'm_':
+                $description = 'Forbrug';
+                break;
+            case 's_':
+                $description = 'Pris';
+                break;
+        }
         switch ($script) {
             case 'year':
             case 'm_year':
             case 's_year':
+                $interval = 'år';
                 $click_script = $prefix.'quarter';
                 break;
             case 'quarter':
             case 'm_quarter':
             case 's_quarter':
+                $interval = 'kvartal';
                 $click_script = $prefix.'month';
                 break;
             case 'month':
             case 'm_month':
             case 's_month':
+                $interval = 'måned';
                 $click_script = $prefix.'day';
                 break;
             case 'day':
             case 'm_day':
             case 's_day':
+                $interval = 'dag';
                 $click_script = $prefix.'hour';
                 break;
             default:
+                $interval = 'time';
                 $click_script = '';
                 break;
         }
+        parent::Contents($node, $description.' pr. '.$interval);
+        $node->Script()->src('chart.js');
+	$id = 'myChart';
+        $div = $node->Div();
+        $canvas = $div->Canvas();
+        $canvas->id($id);
 	$node->Script("
 	    var labels = ".json_encode($labels).";
 	    var cost_data = ".json_encode(array_values($cost_data)).";
@@ -363,9 +379,14 @@ class Meter extends Page
                                         return '';
                                     }
                                     let sum = 0;
+                                    let val = 0;
                                     tooltipItem.forEach(function(tooltipItem) {
-                                        sum += tooltipItem.parsed.y;
+                                        val = tooltipItem.parsed.y;
+                                        sum += val;
                                     });
+                                    if (!spot && !meter) {
+                                        sum -= val;
+                                    }
                                     return 'I alt: ' + sum.toFixed(2);
                                 }
                             }

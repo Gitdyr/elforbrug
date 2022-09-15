@@ -246,8 +246,8 @@ class Page {
         $div->class('card mx-auto');
         $div->style('width: 40rem;');
         $div = $div->Div();
-        $div->class('card-body');
-        $div->H5($title)->class('card-title');
+        $div->class('card-body bg-light');
+        $div->Center()->H1($title);
         return $div;
     }
 

@@ -342,6 +342,21 @@ class Meter extends Page
                         title: {
                             display: true,
                             text: title
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            callbacks: {
+                                footer: (tooltipItem) => {
+                                    if (tooltipItem.length < 2) {
+                                        return '';
+                                    }
+                                    let sum = 0;
+                                    tooltipItem.forEach(function(tooltipItem) {
+                                        sum += tooltipItem.parsed.y;
+                                    });
+                                    return 'I alt: ' + sum.toFixed(2);
+                                }
+                            }
                         }
 		    },
                     responsive: true,
@@ -364,7 +379,6 @@ class Meter extends Page
 	    new Chart(document.getElementById('".$id."'), config);
         ");
     }
-
 }
 
 ?>

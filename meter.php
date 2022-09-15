@@ -51,11 +51,13 @@ class Meter extends Page
         }
         return array(str_replace(',', '.', $ev), str_replace(',', '.', $iv));
     }
+
     public function Costs($start, $stop)
     {
         $costs = array();
         $start = strtotime($start);
         $stop = strtotime($stop);
+        $sstop = date('c', $stop);
         if ($stop > time()) {
             $stop = time();
         }
@@ -78,7 +80,7 @@ class Meter extends Page
         $interval = $result->{'period.timeInterval'};
         $result = reset($result->TimeSeries);
         $time = $start;
-        $prices = $this->Prices($interval->start, $interval->end);
+        $prices = $this->Prices($interval->start, $sstop);
         $qty_sum = 0;
         $cost_sum = 0;
         foreach ($result->Period as $period) {
@@ -91,6 +93,15 @@ class Meter extends Page
                 next($prices);
             }
         }
+        while (true) {
+            list($time, $price) = current($prices);
+            $time = strtotime($time);
+            $date = date('Y-m-d H:i:s', $time);
+            $costs[$date] = array(0, $price);
+            if (!next($prices)) {
+                break;
+            }
+        }
         return $costs;
     }
 
@@ -98,7 +109,7 @@ class Meter extends Page
     {
         if (empty($_SESSION['costs']) || $_SESSION['timeout'] < time()) {
             $sstart = '2020-10-01';
-            $sstop = date('Y-m-d', time());
+            $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
             $_SESSION['costs'] = $this->Costs($sstart, $sstop);
             $_SESSION['timeout'] = time() + 3600;
         }
@@ -129,12 +140,15 @@ class Meter extends Page
         $end_key = array_keys($costs);
         $end_key = end($end_key);
         $count = 0;
+        $ndx = 0;
+        $start_ndx = 0;
+        $stop_ndx = 0;
         foreach ($costs as $key => list($qty, $price)) {
             if ($key < $start) {
-                continue;
+                $start_ndx = $ndx;
             }
-            if ($key >= $stop) {
-                break;
+            if ($key <= $stop) {
+                $stop_ndx = $ndx;
             }
             if (empty($title)) {
                 $title = $key.' - ';
@@ -149,10 +163,15 @@ class Meter extends Page
                     $cost_data[$label] = $cost_sum;
                     $ev_data[$label] = $ev_sum;
                     $iv_data[$label] = $iv_sum;
-                    $vat_data[$label] = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
                     $qty_data[$label] = $qty_sum;
                     $price_data[$label] = $price_sum / $count;
                     $charge_data[$label] = $charge_sum / $count;
+                    if ($spot) {
+                        $vat = ($price_sum + $charge_sum) / $count * 0.25;
+                    } else {
+                        $vat = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
+                    }
+                    $vat_data[$label] = $vat;
                     $cost_sum = 0;
                     $ev_sum = 0;
                     $iv_sum = 0;
@@ -160,6 +179,7 @@ class Meter extends Page
                     $price_sum = 0;
                     $charge_sum = 0;
                     $count = 0;
+                    $ndx++;
                 }
                 $labels[] = substr($key, $loff, $llen);
             }
@@ -175,7 +195,7 @@ class Meter extends Page
             $label = $key;
             $count++;
         }
-        if ($cost_sum || $qty_sum) {
+        if ($cost_sum || $qty_sum || $price_sum) {
             $label = $key.'+';
             $cost_data[$label] = $cost_sum;
             $ev_data[$label] = $ev_sum;
@@ -222,32 +242,45 @@ class Meter extends Page
             case 'm_year':
             case 's_year':
                 $interval = 'år';
-                $click_script = $prefix.'quarter';
+                $click_in = $prefix.'quarter';
+                $click_out = '';
                 break;
             case 'quarter':
             case 'm_quarter':
             case 's_quarter':
                 $interval = 'kvartal';
-                $click_script = $prefix.'month';
+                $click_in = $prefix.'month';
+                $click_out = $prefix.'year';
                 break;
             case 'month':
             case 'm_month':
             case 's_month':
                 $interval = 'måned';
-                $click_script = $prefix.'day';
+                $click_in = $prefix.'day';
+                $click_out = $prefix.'quarter';
                 break;
             case 'day':
             case 'm_day':
             case 's_day':
                 $interval = 'dag';
-                $click_script = $prefix.'hour';
+                $click_in = $prefix.'hour';
+                $click_out = $prefix.'month';
                 break;
             default:
                 $interval = 'time';
-                $click_script = '';
+                $click_in = '';
+                $click_out = $prefix.'day';
                 break;
         }
-        parent::Contents($node, $description.' pr. '.$interval);
+        $button = $node->Button('Forrige');
+        $button->class('btn btn-secondary ms-1 float-start');
+        $button->onclick("GraphPrev(this)");
+        $button = $node->Button('Næste');
+        $button->class('btn btn-secondary me-1 float-end');
+        $button->onclick("GraphNext(this)");
+        $div = parent::Contents($node, $description.' pr. '.$interval);
+        $div->class('btn');
+        $div->onclick("GraphParent()");
         $node->Script()->src('chart.js');
 	$id = 'myChart';
         $div = $node->Div();
@@ -263,11 +296,14 @@ class Meter extends Page
 	    var price_data = ".json_encode(array_values($price_data)).";
 	    var charge_data = ".json_encode(array_values($charge_data)).";
 	    var title = '".$title."';
-	    var click_script = '".$click_script."';
+	    var click_in = '".$click_in."';
+	    var click_out = '".$click_out."';
             var meter = ".$meter.";
             var spot = ".$spot.";
             var ev_sum = ".$ev_sum.";
             var iv_sum = ".$iv_sum.";
+            var start_ndx = ".$start_ndx.";
+            var stop_ndx = ".$stop_ndx." + 1;
             var spot_color = 'rgb(200, 29, 32)';
             var iv_color = 'rgb(55, 99, 32)';
             var ev_color = 'rgb(75, 129, 162)';
@@ -339,7 +375,7 @@ class Meter extends Page
             if (spot) {
                 var label1;
                 var label2;
-                if (click_script) {
+                if (click_in) {
                     label1 = 'Gennemsnitspris [kr]';
                     label2 = 'Gennemsnitsafgift [kr]';
                 } else {
@@ -359,7 +395,23 @@ class Meter extends Page
 		    backgroundColor: ev_color,
 		    borderColor: 'rgb(255, 99, 132)',
 		    data: charge_data
-                }];
+                },
+                {
+		    label: 'Moms [kr]',
+                    id: 'Beløb',
+		    backgroundColor: vat_color,
+		    borderColor: 'rgb(255, 99, 132)',
+		    data: vat_data
+		}]
+            }
+
+            data.full_labels = data.labels;
+            data.labels = data.full_labels.slice(start_ndx, stop_ndx);
+            for (let i = 0; i < data.datasets.length; i++) {
+                data.datasets[i].full_data =
+                    data.datasets[i].data;
+                data.datasets[i].data =
+                    data.datasets[i].full_data.slice(start_ndx, stop_ndx);
             }
 
 	    var config = {
@@ -394,22 +446,95 @@ class Meter extends Page
 		    },
                     responsive: true,
                     scales: {
-                        x: { stacked: true },
-                        y: { stacked: true }
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true
+                        }
                     },
                     onClick: (e, a) => {
-                         let dataIndex = a[0].index;
-                         let label = e.chart.data.labels[dataIndex];
-                         console.log('In click', label);
-                         if (click_script) {
-                             let url = click_script + '.php?start=' + label;
+                         if (click_in) {
+                             let dataIndex = a[0].index;
+                             let label = e.chart.data.labels[dataIndex];
+                             let url = click_in + '.php?start=' + label;
                              location.href = url;
                          }
                     }
 		}
 	    };
 
-	    new Chart(document.getElementById('".$id."'), config);
+	    var chart = new Chart(document.getElementById('".$id."'), config);
+
+            function ButtonRefresh()
+            {
+                var buttons = document.querySelectorAll('.btn');
+                buttons.forEach(function (button) {
+                    if (button.classList.contains('float-start')) {
+                        button.blur();
+                        if (start_ndx == 0) {
+                            button.disabled = true;
+                        } else {
+                            button.disabled = false;
+                        }
+                    }
+                    if (button.classList.contains('float-end')) {
+                        button.blur();
+                        if (stop_ndx == data.full_labels.length) {
+                            button.disabled = true;
+                        } else {
+                            button.disabled = false;
+                        }
+                    }
+                })
+
+            }
+
+            ButtonRefresh();
+
+            function GraphPrev(b) {
+                if (start_ndx == 0) {
+                    ButtonRefresh();
+                    return;
+                }
+                start_ndx -= 1;
+                stop_ndx -= 1;
+                data.labels = data.full_labels.slice(start_ndx, stop_ndx);
+                for (let i = 0; i < data.datasets.length; i++) {
+                    data.datasets[i].data =
+                        data.datasets[i].full_data.slice(start_ndx, stop_ndx);
+                }
+                chart.update();
+                ButtonRefresh();
+            }
+
+            function GraphNext(b) {
+                if (stop_ndx >= data.full_labels.length) {
+                    ButtonRefresh();
+                    return;
+                }
+                start_ndx += 1;
+                stop_ndx += 1;
+                data.labels = data.full_labels.slice(start_ndx, stop_ndx);
+                for (let i = 0; i < data.datasets.length; i++) {
+                    data.datasets[i].data =
+                        data.datasets[i].full_data.slice(start_ndx, stop_ndx);
+                }
+                chart.update();
+                ButtonRefresh();
+            }
+
+            function GraphParent() {
+                if (click_out) {
+                    let params = new URLSearchParams(window.location.search);
+                    let start = params.get('start');
+                    let url = click_out + '.php';
+                    if (start) {
+                        url += '?start=' + start;
+                    }
+                    location.href = url;
+                }
+            }
         ");
     }
 }

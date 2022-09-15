@@ -82,7 +82,6 @@ class Settings extends Page
                 $result = reset($response->result);
                 $id = $result->meteringPointId;
                 setcookie('meteringPointId', $id, time() + 0x2000000);
-                $_SESSION['costs'] = array();
             }
         }
     }

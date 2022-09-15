@@ -13,16 +13,15 @@ class Index extends Page
 {
     public function Contents($body, $title = '')
     {
-        $div = parent::Contents($body, 'Energidata');
+        $div = parent::Contents($body, 'Elforbrug');
         $div->Div('Ved at udtrække spotpriser fra energidataservice.dk
             og faktisk forbrug (pr. time) fra eloverblik.dk
             kan du her se, hvad dit faktisk forbrug har været baseret
             på dag, måned, kvartal eller år.<br><br>
-            Ingen data gemmes på serveren.
             De felter, der udfyldes under "indstillinger" gemmes
             i cookies lokalt i din browser.<br><br>
             Du kan downloade og installere koden fra GitHub:');
-        $url = 'https://github.com/Gitdyr/energidata';
+        $url = 'https://github.com/Gitdyr/elforbrug';
         $div->A($url)->href($url);
     }
 }

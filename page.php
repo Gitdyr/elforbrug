@@ -25,7 +25,7 @@ class Page {
         $meta = $head->Meta();
         $meta->name("viewport");
         $meta->content("width=device-width, initial-scale=1");
-        $head->Title('Energidata');
+        $head->Title('Elforbrug');
         $link = $head->Link();
         $link->rel('stylesheet');
         $link->href($bpath.'/css/bootstrap.min.css');
@@ -154,7 +154,7 @@ class Page {
         $nav->class('navbar navbar-expand-sm navbar-dark bg-dark');
         $div = $nav->Div();
         $div->class('container-fluid');
-        $a = $div->A('Energidata');
+        $a = $div->A('Elforbrug');
         $a->class('navbar-brand');
         $a->href('index.php');
         $ul = $div->Ul();

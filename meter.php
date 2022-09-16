@@ -206,7 +206,7 @@ class Meter extends Page
         $stop_ndx = $start_ndx + $len;
         if ($stop_ndx > $last_qty_ndx && !$spot && !$this->Get('start')) {
             $stop_ndx = $last_qty_ndx + 1;
-            $start_ndx = $last_qty_ndx - $len;
+            $start_ndx = $stop_ndx - $len;
         }
         if ($cost_sum || $qty_sum || $price_sum) {
             $cost_data[] = $cost_sum;

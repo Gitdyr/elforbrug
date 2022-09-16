@@ -153,6 +153,7 @@ class Meter extends Page
         $count = 0;
         $ndx = 0;
         $start_ndx = 0;
+        $last_qty_ndx = 0;
         $start = $this->Get('start', $start);
         foreach ($costs as list($key, $qty, $price)) {
             list($ev, $iv) = $this->GetCharges($key);
@@ -180,6 +181,9 @@ class Meter extends Page
                     $charge_sum = 0;
                     $count = 0;
                     $ndx++;
+                    if ($qty) {
+                        $last_qty_ndx = $ndx;
+                    }
                 }
                 $labels[] = substr($key, $loff, $llen);
                 $keys[] = $key;
@@ -195,11 +199,15 @@ class Meter extends Page
             $price_sum += $price;
             $charge_sum += $ev;
             $count++;
-            if (substr($key, 0, 10) <= $start) {
+            if (substr($key, 0, 10) < $start) {
                 $start_ndx = $ndx + 1;
             }
         }
         $stop_ndx = $start_ndx + $len;
+        if ($stop_ndx > $last_qty_ndx && !$spot && !$this->Get('start')) {
+            $stop_ndx = $last_qty_ndx + 1;
+            $start_ndx = $last_qty_ndx - $len;
+        }
         if ($cost_sum || $qty_sum || $price_sum) {
             $cost_data[] = $cost_sum;
             $ev_data[] = $ev_sum;

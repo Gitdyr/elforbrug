@@ -14,7 +14,7 @@ class Fields extends Meter
     public function Contents($body, $title = '')
     {
         $script = basename($_SERVER['SCRIPT_NAME'], '.php');
-        $spot = substr($script, 0, 2) == 's_' ? 48 * 3600 : 0;
+        $spot = substr($script, 0, 2) == 's_' ? 2 * 48 * 3600 : 0;
         $len = 24;
         $start = date('Y-m-d', time() + $spot);
         $this->Chart($body, $start, $len, '', 11, 5);

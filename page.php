@@ -33,7 +33,6 @@ class Page {
         $link->rel('stylesheet');
         $link->href('style.css');
         $head->Script()->src($bpath.'/js/bootstrap.min.js');
-        session_start();
     }
 
     public function Item($ul, $name, $href = null)
@@ -261,6 +260,7 @@ class Page {
 
     public function Display()
     {
+        session_start();
         $this->RefreshToken();
         $this->HandlePost();
         $this->html = new HtmlNode();

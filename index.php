@@ -14,10 +14,11 @@ class Index extends Page
     public function Contents($body, $title = '')
     {
         $div = parent::Contents($body, 'Elforbrug');
-        $div->Div('Ved at udtrække spotpriser fra energidataservice.dk
-            og faktisk forbrug (pr. time) fra eloverblik.dk
-            kan du her se, hvad dit faktisk forbrug har været baseret
-            på dag, måned, kvartal eller år.<br><br>
+        $div->Div('
+            Her kan du se hvad dit faktiske forbrug har været baseret
+            på timer, dage, måneder, kvartaler eller år.<br><br>
+            Dette gøres ved at udtrække spotpriser fra energidataservice.dk
+            og forbrug (pr. time) fra eloverblik.dk.<br><br>
             De felter, der udfyldes under "indstillinger" gemmes
             i cookies lokalt i din browser.<br><br>
             Du kan downloade og installere koden fra GitHub:');

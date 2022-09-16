@@ -18,6 +18,7 @@ class Settings extends Page
     {
         parent::HandlePost();
         if ($_POST) {
+            $_SESSION['costs'] = array();
             $charges = array();
             $c_list = array('e6_', 'e17_', 'e21_', 'e24_', 'i_');
             foreach ($_POST as $key => $val) {
@@ -69,20 +70,22 @@ class Settings extends Page
             }
             $url = 'https://api.eloverblik.dk/customerapi/api/token';
             $val = $this->Cookie('refresh_token');
-            $this->token = $val;
-            $json = $this->DoCurl($url);
-            if ($json) {
-                $this->info = 'Indstillinger opdateret';
-                $res = json_decode($json);
-                setcookie('token', $res->result, time() + 3600);
-                $this->token = $res->result;
-                $url = 'https://api.eloverblik.dk/customerapi/api';
-                $url .= '/meteringpoints/meteringpoints';
+            if ($val) {
+                $this->token = $val;
                 $json = $this->DoCurl($url);
-                $response = json_decode($json);
-                $result = reset($response->result);
-                $id = $result->meteringPointId;
-                setcookie('meteringPointId', $id, time() + 0x2000000);
+                if ($json) {
+                    $this->info = 'Indstillinger opdateret';
+                    $res = json_decode($json);
+                    setcookie('token', $res->result, time() + 3600);
+                    $this->token = $res->result;
+                    $url = 'https://api.eloverblik.dk/customerapi/api';
+                    $url .= '/meteringpoints/meteringpoints';
+                    $json = $this->DoCurl($url);
+                    $response = json_decode($json);
+                    $result = reset($response->result);
+                    $id = $result->meteringPointId;
+                    setcookie('meteringPointId', $id, time() + 0x2000000);
+                }
             }
         }
     }

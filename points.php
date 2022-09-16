@@ -13,12 +13,14 @@ class Fields extends Page
 {
     public function Contents($body, $title = '')
     {
+        $div = parent::Contents($body, 'Målepunkter');
+        if (empty($this->token)) {
+            return;
+        }
         $url = 'https://api.eloverblik.dk/customerapi/api';
         $url .= '/meteringpoints/meteringpoints';
-        // $this->token = $this->Cookie('token');
         $json = $this->DoCurl($url);
         $this->Alert($body);
-        $div = parent::Contents($body, 'Målepunkter');
         if ($this->error) {
             return;
         }

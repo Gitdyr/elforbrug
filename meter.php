@@ -20,6 +20,9 @@ class Meter extends Page
         $stop = strtotime($stop);
         $url = 'https://api.energidataservice.dk/dataset/Elspotprices';
         $price_area = $this->Cookie('price_area');
+        if (!$price_area) {
+            $price_area = 'DK2';
+        }
         $data = array(
             'offset' => 0,
             'sort' => 'HourUTC asc',
@@ -45,9 +48,19 @@ class Meter extends Page
         $costs = array();
         $start = strtotime($start);
         $stop = strtotime($stop);
+        $sstart = date('c', $start);
         $sstop = date('c', $stop);
         if ($stop > time()) {
             $stop = time();
+        }
+        if (empty($this->token)) {
+            $prices = $this->Prices($sstart, $sstop);
+            foreach ($prices as list($time, $price)) {
+                $time = strtotime($time);
+                $date = date('Y-m-d H:i:s', $time);
+                $costs[] = array($date, 0, $price);
+            }
+            return $costs;
         }
         $url = 'https://api.eloverblik.dk/customerapi/api';
         $url .= '/meterdata/gettimeseries';
@@ -291,12 +304,12 @@ class Meter extends Page
         foreach (['Forrige', '+', '-'] as $txt) {
             $button = $node->Button($txt);
             $button->class('btn btn-secondary ms-1 float-start');
-            $button->onclick("GraphPrev(this)");
+            $button->onclick("GraphPrev(event)");
         }
         foreach (['Næste', '+', '-'] as $txt) {
             $button = $node->Button($txt);
             $button->class('btn btn-secondary ms-1 float-end');
-            $button->onclick("GraphNext(this)");
+            $button->onclick("GraphNext(event)");
         }
         $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
@@ -323,7 +336,7 @@ class Meter extends Page
                 $table = array_slice($table, 0, $last_qty_ndx + 1);
             }
         }
-        $limit = 100;
+        $limit = 240;
         if ($start_ndx - $limit > 0) {
             foreach ($tables as &$table) {
                 $table = array_slice($table, $start_ndx - $limit);
@@ -510,6 +523,10 @@ class Meter extends Page
                 var len = stop_ndx - start_ndx;
                 var start_time;
                 var stop_time;
+                if (start_ndx < 0) {
+                    start_ndx = 0;
+                    stop_ndx = len;
+                }
                 if (stop_ndx >= data.full_labels.length) {
                     stop_ndx = data.full_labels.length;
                     start_ndx = stop_ndx - len;
@@ -571,26 +588,30 @@ class Meter extends Page
 
 	    var chart = new Chart(document.getElementById('".$id."'), config);
 
-            function GraphPrev(b) {
+            function GraphPrev(e) {
+                var steps = e.shiftKey ? click_in ? 10 : 24 : 1;
+                var b = e.target;
                 if (b.innerText == '+') {
-                    start_ndx -= 1;
+                    start_ndx -= steps;
                 } else if (b.innerText == '-') {
-                    start_ndx += 1;
+                    start_ndx += steps;
                 } else {
-                    start_ndx -= 1;
-                    stop_ndx -= 1;
+                    start_ndx -= steps;
+                    stop_ndx -= steps;
                 }
                 ButtonRefresh();
             }
 
-            function GraphNext(b) {
+            function GraphNext(e) {
+                var steps = e.shiftKey ? click_in ? 10 : 24 : 1;
+                var b = e.target;
                 if (b.innerText == '+') {
-                    stop_ndx += 1;
+                    stop_ndx += steps;
                 } else if (b.innerText == '-') {
-                    stop_ndx -= 1;
+                    stop_ndx -= steps;
                 } else {
-                    start_ndx += 1;
-                    stop_ndx += 1;
+                    start_ndx += steps;
+                    stop_ndx += steps;
                 }
                 ButtonRefresh();
             }

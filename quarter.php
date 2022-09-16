@@ -40,15 +40,14 @@ class Fields extends Meter
         }
         $m += 6;
         $start = date('Y-m-01', $time - $m * 31 * 24 * 3600);
-        $start = '2020-10-01';
-        $stop = date('Y-m-d', time());
+        $len = 4;
         $quarters = array(
             '01-01 00:00:00',
             '04-01 00:00:00',
             '07-01 00:00:00',
             '10-01 00:00:00'
         );
-        $this->Chart($body, $start, $stop, $quarters, 0, 7);
+        $this->Chart($body, $start, $len, $quarters, 0, 7);
     }
 }
 

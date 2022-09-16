@@ -36,29 +36,8 @@ class Meter extends Page
             $prices[] = array($record->HourDK, $price);
         }
         // $this->Dump($prices);
+        // $this->Dump(end($prices));
         return $prices;
-    }
-
-    public function GetCharges($date)
-    {
-        $dv = $ev = $iv = 0;
-        for ($i = 0; $i < $this->charge_count; $i++) {
-            $dv = $this->Cookie('d_charge_'.$i);
-            if ($dv && $date >= $dv) {
-                $hour = (int)substr($date, 11, 2);
-                if ($hour >= 6 && $hour < 17) {
-                    $ev = $this->Cookie('e6_charge_'.$i);
-                } elseif ($hour >= 17 && $hour < 21) {
-                    $ev = $this->Cookie('e17_charge_'.$i);
-                } elseif ($hour >= 21) {
-                    $ev = $this->Cookie('e21_charge_'.$i);
-                } else {
-                    $ev = $this->Cookie('e24_charge_'.$i);
-                }
-                $iv = $this->Cookie('i_charge_'.$i);
-            }
-        }
-        return array(str_replace(',', '.', $ev), str_replace(',', '.', $iv));
     }
 
     public function Costs($start, $stop)
@@ -115,7 +94,29 @@ class Meter extends Page
         return $costs;
     }
 
-    public function Chart($node, $start, $stop, $pattern, $loff, $llen)
+    public function GetCharges($date)
+    {
+        $dv = $ev = $iv = 0;
+        for ($i = 0; $i < $this->charge_count; $i++) {
+            $dv = $this->Cookie('d_charge_'.$i);
+            if ($dv && $date >= $dv) {
+                $hour = (int)substr($date, 11, 2);
+                if ($hour >= 6 && $hour < 17) {
+                    $ev = $this->Cookie('e6_charge_'.$i);
+                } elseif ($hour >= 17 && $hour < 21) {
+                    $ev = $this->Cookie('e17_charge_'.$i);
+                } elseif ($hour >= 21) {
+                    $ev = $this->Cookie('e21_charge_'.$i);
+                } else {
+                    $ev = $this->Cookie('e24_charge_'.$i);
+                }
+                $iv = $this->Cookie('i_charge_'.$i);
+            }
+        }
+        return array(str_replace(',', '.', $ev), str_replace(',', '.', $iv));
+    }
+
+    public function Chart($node, $start, $len, $pattern, $loff, $llen)
     {
         if (empty($_SESSION['costs']) || $_SESSION['timeout'] < time()) {
             $sstart = '2020-10-01';
@@ -126,7 +127,6 @@ class Meter extends Page
         $script = basename($_SERVER['SCRIPT_NAME'], '.php');
         $meter = substr($script, 0, 2) == 'm_' ? 1 : 0;
         $spot = substr($script, 0, 2) == 's_' ? 1 : 0;
-        $stop = date('Y-m-d H:i:s', strtotime($stop) - 1);
         $costs = $_SESSION['costs'];
         $cost_data = array();
         $ev_data = array();
@@ -153,14 +153,8 @@ class Meter extends Page
         $count = 0;
         $ndx = 0;
         $start_ndx = 0;
-        $stop_ndx = 0;
+        $start = $this->Get('start', $start);
         foreach ($costs as list($key, $qty, $price)) {
-            if ($key < $start) {
-                $start_ndx = $ndx;
-            }
-            if ($key <= $stop) {
-                $stop_ndx = $ndx;
-            }
             list($ev, $iv) = $this->GetCharges($key);
             $cost = $qty * $price;
             $cost += $qty * $ev + $iv;
@@ -201,7 +195,11 @@ class Meter extends Page
             $price_sum += $price;
             $charge_sum += $ev;
             $count++;
+            if (substr($key, 0, 10) <= $start) {
+                $start_ndx = $ndx + 1;
+            }
         }
+        $stop_ndx = $start_ndx + $len;
         if ($cost_sum || $qty_sum || $price_sum) {
             $cost_data[] = $cost_sum;
             $ev_data[] = $ev_sum;
@@ -282,12 +280,16 @@ class Meter extends Page
                 $click_out = $prefix.'day';
                 break;
         }
-        $button = $node->Button('Forrige');
-        $button->class('btn btn-secondary ms-1 float-start');
-        $button->onclick("GraphPrev(this)");
-        $button = $node->Button('Næste');
-        $button->class('btn btn-secondary me-1 float-end');
-        $button->onclick("GraphNext(this)");
+        foreach (['Forrige', '+', '-'] as $txt) {
+            $button = $node->Button($txt);
+            $button->class('btn btn-secondary ms-1 float-start');
+            $button->onclick("GraphPrev(this)");
+        }
+        foreach (['Næste', '+', '-'] as $txt) {
+            $button = $node->Button($txt);
+            $button->class('btn btn-secondary ms-1 float-end');
+            $button->onclick("GraphNext(this)");
+        }
         $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
         $div->onclick("GraphParent()");
@@ -313,7 +315,7 @@ class Meter extends Page
             var ev_sum = ".$ev_sum.";
             var iv_sum = ".$iv_sum.";
             var start_ndx = ".$start_ndx.";
-            var stop_ndx = ".$stop_ndx." + 1;
+            var stop_ndx = ".$stop_ndx.";
             var spot_color = 'rgb(200, 29, 32)';
             var iv_color = 'rgb(55, 99, 32)';
             var ev_color = 'rgb(75, 129, 162)';
@@ -415,15 +417,6 @@ class Meter extends Page
 		}]
             }
 
-            data.full_labels = data.labels;
-            data.labels = data.full_labels.slice(start_ndx, stop_ndx);
-            for (let i = 0; i < data.datasets.length; i++) {
-                data.datasets[i].full_data =
-                    data.datasets[i].data;
-                data.datasets[i].data =
-                    data.datasets[i].full_data.slice(start_ndx, stop_ndx);
-            }
-
 	    var config = {
 		type: 'bar',
 		data: data,
@@ -474,18 +467,35 @@ class Meter extends Page
 		}
 	    };
 
-	    var chart = new Chart(document.getElementById('".$id."'), config);
-
             function ButtonRefresh()
             {
+                var len = stop_ndx - start_ndx;
+                var start_time;
+                var stop_time;
+                if (stop_ndx >= data.full_labels.length) {
+                    stop_ndx = data.full_labels.length;
+                    start_ndx = stop_ndx - len;
+                    if (start_ndx < 0) {
+                        start_ndx = 0;
+                    }
+                }
+                if (click_in) {
+                    start_time = labels[start_ndx];
+                    stop_time = labels[stop_ndx - 1];
+                } else {
+                    start_time = keys[start_ndx];
+                    stop_time = keys[stop_ndx - 1].substr(0, 14) + '59:59';
+                }
                 config.options.plugins.title.text =
-                    keys[start_ndx] + ' - ' +
-                    keys[stop_ndx - 1].substr(0, 14) + '59:59';
+                    start_time + ' - ' + stop_time;
                 var buttons = document.querySelectorAll('.btn');
                 buttons.forEach(function (button) {
                     if (button.classList.contains('float-start')) {
                         button.blur();
-                        if (start_ndx == 0) {
+                        if (start_ndx == 0 && button.innerText != '-' ||
+                            start_ndx == stop_ndx - 1
+                            && button.innerText == '-')
+                        {
                             button.disabled = true;
                         } else {
                             button.disabled = false;
@@ -493,44 +503,56 @@ class Meter extends Page
                     }
                     if (button.classList.contains('float-end')) {
                         button.blur();
-                        if (stop_ndx == data.full_labels.length) {
+                        if (stop_ndx >= data.full_labels.length &&
+                            button.innerText != '-' ||
+                            start_ndx == stop_ndx - 1
+                            && button.innerText == '-')
+                        {
                             button.disabled = true;
                         } else {
                             button.disabled = false;
                         }
                     }
                 })
-                chart.update();
-            }
-
-            ButtonRefresh();
-
-            function GraphPrev(b) {
-                if (start_ndx == 0) {
-                    ButtonRefresh();
-                    return;
-                }
-                start_ndx -= 1;
-                stop_ndx -= 1;
                 data.labels = data.full_labels.slice(start_ndx, stop_ndx);
                 for (let i = 0; i < data.datasets.length; i++) {
                     data.datasets[i].data =
                         data.datasets[i].full_data.slice(start_ndx, stop_ndx);
+                }
+                if (chart) {
+                    chart.update();
+                }
+            }
+
+            data.full_labels = data.labels;
+            for (let i = 0; i < data.datasets.length; i++) {
+                data.datasets[i].full_data = data.datasets[i].data;
+            }
+
+            ButtonRefresh();
+
+	    var chart = new Chart(document.getElementById('".$id."'), config);
+
+            function GraphPrev(b) {
+                if (b.innerText == '+') {
+                    start_ndx -= 1;
+                } else if (b.innerText == '-') {
+                    start_ndx += 1;
+                } else {
+                    start_ndx -= 1;
+                    stop_ndx -= 1;
                 }
                 ButtonRefresh();
             }
 
             function GraphNext(b) {
-                if (stop_ndx >= data.full_labels.length) {
-                    ButtonRefresh();
-                    return;
-                }
-                start_ndx += 1;
-                stop_ndx += 1;
-                data.labels = data.full_labels.slice(start_ndx, stop_ndx);
-                for (let i = 0; i < data.datasets.length; i++) {
-                    data.datasets[i].data =
-                        data.datasets[i].full_data.slice(start_ndx, stop_ndx);
+                if (b.innerText == '+') {
+                    stop_ndx += 1;
+                } else if (b.innerText == '-') {
+                    stop_ndx -= 1;
+                } else {
+                    start_ndx += 1;
+                    stop_ndx += 1;
                 }
                 ButtonRefresh();
             }

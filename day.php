@@ -13,12 +13,9 @@ class Fields extends Meter
 {
     public function Contents($body, $title = '')
     {
-        $len = 31 * 24 * 3600;
-        $start = $this->Get('start', date('Y-m-d', time() - $len));
-        $time = strtotime($start);
-        $start = date('Y-m-d', $time);
-        $stop = date('Y-m-d', $time + $len);
-        $this->Chart($body, $start, $stop, '00:00:00', 0, 10);
+        $len = 31;
+        $start = date('Y-m-d', time());
+        $this->Chart($body, $start, $len, '00:00:00', 0, 10);
     }
 }
 

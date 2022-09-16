@@ -13,10 +13,9 @@ class Fields extends Meter
 {
     public function Contents($body, $title = '')
     {
-        $start = '2020-10-01';
-        $stop = date('Y-m-d', time());
-        $this->Chart($body, $start, $stop, '01-01 00:00:00', 0, 4);
-        $this->Alert($body);
+        $start = date('Y-m-d', time());
+        $len = 10;
+        $this->Chart($body, $start, $len, '01-01 00:00:00', 0, 4);
     }
 }
 

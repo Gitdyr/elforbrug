@@ -439,11 +439,11 @@ class Meter extends Page
                 var label1;
                 var label2;
                 if (click_in) {
-                    label1 = 'Gennemsnitspris [kr]';
-                    label2 = 'Gennemsnitsafgift [kr]';
+                    label1 = 'Gennemsnitspris [kr/kWh]';
+                    label2 = 'Gennemsnitsafgift [kr/kWh]';
                 } else {
-                    label1 = 'Spotpris pr. kWh [kr]';
-                    label2 = 'Afgift pr. kWh [kr]';
+                    label1 = 'Spotpris [kr/kWh]';
+                    label2 = 'Afgift [kr/kWh]';
                 }
                 data.datasets = [{
 		    label: label1,
@@ -460,7 +460,7 @@ class Meter extends Page
 		    data: charge_data
                 },
                 {
-		    label: 'Moms [kr]',
+		    label: 'Moms [kr/kWh]',
                     id: 'Beløb',
 		    backgroundColor: vat_color,
 		    borderColor: 'rgb(255, 99, 132)',

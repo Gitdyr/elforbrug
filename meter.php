@@ -306,16 +306,46 @@ class Meter extends Page
         $div = $node->Div();
         $canvas = $div->Canvas();
         $canvas->id($id);
+        // Limit to 1000 entries
+        $tables = array(
+            &$labels,
+            &$keys,
+            &$cost_data,
+            &$ev_data,
+            &$iv_data,
+            &$vat_data,
+            &$qty_data,
+            &$price_data,
+            &$charge_data
+        );
+        if (!$spot && $last_qty_ndx + 1 < count($labels)) {
+            foreach ($tables as &$table) {
+                $table = array_slice($table, 0, $last_qty_ndx + 1);
+            }
+        }
+        $limit = 100;
+        if ($start_ndx - $limit > 0) {
+            foreach ($tables as &$table) {
+                $table = array_slice($table, $start_ndx - $limit);
+            }
+            $stop_ndx -= $start_ndx - $limit;
+            $start_ndx = $limit;
+        }
+        if ($stop_ndx + $limit < count($labels)) {
+            foreach ($tables as &$table) {
+                $table = array_slice($table, 0, $stop_ndx + $limit);
+            }
+        }
 	$node->Script("
 	    var labels = ".json_encode($labels).";
 	    var keys = ".json_encode($keys).";
-	    var cost_data = ".json_encode(array_values($cost_data)).";
-	    var ev_data = ".json_encode(array_values($ev_data)).";
-	    var iv_data = ".json_encode(array_values($iv_data)).";
-	    var vat_data = ".json_encode(array_values($vat_data)).";
-	    var qty_data = ".json_encode(array_values($qty_data)).";
-	    var price_data = ".json_encode(array_values($price_data)).";
-	    var charge_data = ".json_encode(array_values($charge_data)).";
+	    var cost_data = ".json_encode($cost_data).";
+	    var ev_data = ".json_encode($ev_data).";
+	    var iv_data = ".json_encode($iv_data).";
+	    var vat_data = ".json_encode($vat_data).";
+	    var qty_data = ".json_encode($qty_data).";
+	    var price_data = ".json_encode($price_data).";
+	    var charge_data = ".json_encode($charge_data).";
 	    var click_in = '".$click_in."';
 	    var click_out = '".$click_out."';
             var meter = ".$meter.";

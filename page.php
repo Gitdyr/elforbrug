@@ -124,6 +124,35 @@ class Page {
         if ($text) {
             $idiv->Div($text)->class('form-text');
         }
+        return $input;
+    }
+
+    public function InputSelect($div, $title, $options, $name = null, $text = null)
+    {
+        if ($name == null) {
+            $name = strtolower($title);
+        }
+        $div = $div->Div();
+        $div->class('row mb-3');
+        $label = $div->Label($title);
+        $label->class('col-sm-4 col-form-label');
+        $label->class('text-right');
+        $idiv = $div->Div();
+        $idiv->class('col-sm-2');
+        $select = $idiv->Select();
+        $select->class('form-select');
+        $select->name($name);
+        foreach ($options as $option_text) {
+            $option = $select->Option($option_text);
+            $option->value($option_text);
+            if ($option_text == $this->Cookie($name)) {
+                $option->selected('true');
+            }
+        }
+        if ($text) {
+            $idiv->Div($text)->class('form-text');
+        }
+        return $select;
     }
 
     public function InputCell($tr, $name = null, $text = null)
@@ -241,7 +270,8 @@ class Page {
         $form = $body->Form();
         $form->method('post');
         $div = $form->Div();
-        $div->class('card mx-auto w-50');
+        $div->class('card mx-auto');
+        $div->style('width: 60%;');
         $div = $div->Div();
         $div->class('card-body bg-light');
         $div->Center()->H1($title);

@@ -93,8 +93,12 @@ class Settings extends Page
     public function Contents($body, $title = '')
     {
         $div = parent::Contents($body, 'Indstillinger');
+        $div->parent->style('width: 90%;');
         $this->InputField($div, 'Refresh token', 'refresh_token');
-        $this->InputField($div, 'Prisområde (DK1/DK2)', 'price_area',
+        $select = $this->InputSelect($div,
+            'Prisområde (DK1/DK2)',
+            ['DK1', 'DK2'],
+            'price_area',
             'DK1 er Danmark vest, DK2 er Danmark øst');
         $div->Center()->H2('Omkostninger ekskl. moms');
         $div->Br();

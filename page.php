@@ -87,7 +87,7 @@ class Page {
                 $this->debug = true;
             }
             foreach ($_POST as $key => $val) {
-                $val = filter_var($val, FILTER_SANITIZE_STRING);
+                $val = htmlspecialchars($val);
                 $this->SetCookie($key, $val);
             }
         }
@@ -98,7 +98,8 @@ class Page {
         if (empty($_GET[$var])) {
             $val = $default;
         } else {
-            $val = filter_var($_GET[$var], FILTER_SANITIZE_STRING);
+            $val = $_GET[$var];
+            $val = htmlspecialchars($val);
         }
         return $val;
     }
@@ -192,15 +193,13 @@ class Page {
     {
         if ($this->error) {
             $div = $body->Div();
-            $div->class('card mx-auto alert alert-danger');
-            $div->style('width: 35rem;');
+            $div->class('card mx-auto alert alert-danger max-vw-50');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->error);
         } elseif ($this->info) {
             $div = $body->Div();
-            $div->class('card mx-auto alert alert-success');
-            $div->style('width: 35rem;');
+            $div->class('card mx-auto alert alert-success max-vw-50');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->info);
@@ -242,8 +241,7 @@ class Page {
         $form = $body->Form();
         $form->method('post');
         $div = $form->Div();
-        $div->class('card mx-auto');
-        $div->style('width: 35rem;');
+        $div->class('card mx-auto w-50');
         $div = $div->Div();
         $div->class('card-body bg-light');
         $div->Center()->H1($title);
@@ -281,7 +279,7 @@ class Page {
         } else {
             $val = '';
         }
-        $val = filter_var($val, FILTER_SANITIZE_STRING);
+        $val = htmlspecialchars($val);
         return $val;
     }
 

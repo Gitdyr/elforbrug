@@ -150,7 +150,6 @@ class Meter extends Page
         $cost_data = array();
         $ev_data = array();
         $iv_data = array();
-        $vat_data = array();
         $qty_data = array();
         $price_data = array();
         $charge_data = array();
@@ -186,12 +185,6 @@ class Meter extends Page
                     $qty_data[] = $qty_sum;
                     $price_data[] = $price_sum / $count;
                     $charge_data[] = $charge_sum / $count;
-                    if ($spot) {
-                        $vat = ($price_sum + $charge_sum) / $count * 0.25;
-                    } else {
-                        $vat = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
-                    }
-                    $vat_data[] = $vat;
                     $cost_sum = 0;
                     $ev_sum = 0;
                     $iv_sum = 0;
@@ -234,16 +227,8 @@ class Meter extends Page
             $qty_data[] = $qty_sum;
             $price_data[] = $price_sum / $count;
             $charge_data[] = $charge_sum / $count;
-            if ($spot) {
-                $vat = ($price_sum + $charge_sum) / $count * 0.25;
-            } else {
-                $vat = ($cost_sum + $ev_sum + $iv_sum) * 0.25;
-            }
-            $vat_data[] = $vat;
         }
 
-        $ev_sum = array_sum($ev_data);
-        $iv_sum = array_sum($iv_data);
         switch ($prefix) {
             case '':
                 $description = 'Udgift';
@@ -309,7 +294,6 @@ class Meter extends Page
             &$cost_data,
             &$ev_data,
             &$iv_data,
-            &$vat_data,
             &$qty_data,
             &$price_data,
             &$charge_data
@@ -338,17 +322,15 @@ class Meter extends Page
 	    var cost_data = ".json_encode($cost_data).";
 	    var ev_data = ".json_encode($ev_data).";
 	    var iv_data = ".json_encode($iv_data).";
-	    var vat_data = ".json_encode($vat_data).";
 	    var qty_data = ".json_encode($qty_data).";
 	    var price_data = ".json_encode($price_data).";
 	    var charge_data = ".json_encode($charge_data).";
+            var vat_data = [];
 	    var click_in = '".$click_in."';
 	    var click_out = '".$click_out."';
             var script = '".$script."';
             var meter = ".$meter.";
             var spot = ".$spot.";
-            var ev_sum = ".$ev_sum.";
-            var iv_sum = ".$iv_sum.";
             var start_ndx = ".$start_ndx.";
             var stop_ndx = ".$stop_ndx.";
             var spot_color = 'rgb(200, 29, 32)';
@@ -357,6 +339,26 @@ class Meter extends Page
             var vat_color = 'rgb(155, 155, 155)';
             var qty_color = 'rgb(180, 170, 80)';
             const legendClick = Chart.defaults.plugins.legend.onClick;
+
+            function Sum(data)
+            {
+                return data.reduce((s, a) => s + a, 0);
+            }
+
+            if (!meter) {
+                var tables;
+                if (spot) {
+                    tables = [price_data, charge_data]
+                } else {
+                    tables = [cost_data, iv_data, ev_data]
+                }
+                var vat_data = Array(labels.length).fill(0);
+                for (let i = 0; i < tables.length; i++) {
+                    for (let j = 0; j < tables[i].length; j++) {
+                        vat_data[j] += tables[i][j] * 0.25;
+                    }
+                }
+            }
 
 	    var data = {
 		labels: labels,
@@ -402,11 +404,11 @@ class Meter extends Page
                 }]
 	    };
 
-            if (ev_sum == 0) {
+            if (Sum(ev_data) == 0) {
                 data.datasets.splice(2, 1);
             }
 
-            if (iv_sum == 0) {
+            if (Sum(iv_data) == 0) {
                 data.datasets.splice(1, 1);
             }
 
@@ -512,11 +514,6 @@ class Meter extends Page
 		}
 	    };
 
-            function Sum(data)
-            {
-                return data.reduce((s, a) => s + a, 0);
-            }
-
             function MeanRefresh()
             {
                 const len = data.datasets.length;
@@ -546,7 +543,6 @@ class Meter extends Page
                 var len = stop_ndx - start_ndx;
                 var start_time;
                 var stop_time;
-                console.log({0:'ButtonRefresh enter', start_ndx, stop_ndx});
                 if (start_ndx < 0) {
                     start_ndx = 0;
                     stop_ndx = len;
@@ -558,7 +554,6 @@ class Meter extends Page
                         start_ndx = 0;
                     }
                 }
-                console.log({0:'ButtonRefresh exit', start_ndx, stop_ndx});
                 if (click_in) {
                     start_time = labels[start_ndx];
                     stop_time = labels[stop_ndx - 1];
@@ -641,11 +636,16 @@ class Meter extends Page
                 if (steps > 1 || steps < -1) {
                     steps = GetNextSteps(steps);
                 }
-                console.log(steps);
                 if (b.innerText == '+') {
                     if (steps > 0) {
+                        if (steps > 1 && stop_ndx - start_ndx == 1) {
+                            stop_ndx -= 1;
+                        }
                         stop_ndx += steps;
                     } else {
+                        if (steps < -1 && stop_ndx - start_ndx == 1) {
+                            start_ndx += 1;
+                        }
                         start_ndx += steps;
                     }
                 } else if (b.innerText == '-') {

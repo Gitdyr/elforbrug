@@ -137,9 +137,15 @@ class Meter extends Page
             $_SESSION['costs'] = $this->Costs($sstart, $sstop);
             $_SESSION['timeout'] = time() + 3600;
         }
-        $script = basename($_SERVER['SCRIPT_NAME'], '.php');
-        $meter = substr($script, 0, 2) == 'm_' ? 1 : 0;
-        $spot = substr($script, 0, 2) == 's_' ? 1 : 0;
+        $script = explode('_', basename($_SERVER['SCRIPT_NAME'], '.php'));
+        if (count($script) == 1) {
+            $prefix = '';
+        } else {
+            $prefix = reset($script).'_';
+        }
+        $script = end($script);
+        $meter = $prefix == 'm_' ? 1 : 0;
+        $spot = $prefix == 's_' ? 1 : 0;
         $costs = $_SESSION['costs'];
         $cost_data = array();
         $ev_data = array();
@@ -236,25 +242,8 @@ class Meter extends Page
             $vat_data[] = $vat;
         }
 
-	$cost_sum = array_sum($cost_data);
-        $qty_sum = array_sum($qty_data);
         $ev_sum = array_sum($ev_data);
         $iv_sum = array_sum($iv_data);
-        if ($cost_sum && $qty_sum) {
-            $cost_mean = 5 * array_sum($vat_data) / array_sum($qty_data);
-        } else {
-            $cost_mean = 1;
-        }
-        if ($meter == false) {
-            foreach ($qty_data as &$val) {
-                $val *= $cost_mean;
-            }
-        }
-        if (substr($script, 1, 1) == '_') {
-            $prefix = substr($script, 0, 2);
-        } else {
-            $prefix = '';
-        }
         switch ($prefix) {
             case '':
                 $description = 'Udgift';
@@ -268,29 +257,21 @@ class Meter extends Page
         }
         switch ($script) {
             case 'year':
-            case 'm_year':
-            case 's_year':
                 $interval = 'år';
                 $click_in = $prefix.'quarter';
                 $click_out = '';
                 break;
             case 'quarter':
-            case 'm_quarter':
-            case 's_quarter':
                 $interval = 'kvartal';
                 $click_in = $prefix.'month';
                 $click_out = $prefix.'year';
                 break;
             case 'month':
-            case 'm_month':
-            case 's_month':
                 $interval = 'måned';
                 $click_in = $prefix.'day';
                 $click_out = $prefix.'quarter';
                 break;
             case 'day':
-            case 'm_day':
-            case 's_day':
                 $interval = 'dag';
                 $click_in = $prefix.'hour';
                 $click_out = $prefix.'month';
@@ -301,19 +282,19 @@ class Meter extends Page
                 $click_out = $prefix.'day';
                 break;
         }
-        $div = parent::Contents($node, $description.' pr. '.$interval);
         foreach (['Forrige', '+', '-'] as $txt) {
             $button = $node->Button($txt);
-            $button->class('btn btn-secondary ms-1 float-start');
+            $button->class('btn btn-secondary m-1 float-start');
             $button->oncontextmenu("GraphPrevContext(event)");
             $button->onclick("GraphPrev(event)");
         }
         foreach (['Næste', '+', '-'] as $txt) {
             $button = $node->Button($txt);
-            $button->class('btn btn-secondary me-1 float-end');
+            $button->class('btn btn-secondary m-1 float-end');
             $button->oncontextmenu("GraphNextContext(event)");
             $button->onclick("GraphNext(event)");
         }
+        $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
         $div->onclick("GraphParent()");
         $node->Script()->src('chart.js');
@@ -363,6 +344,7 @@ class Meter extends Page
 	    var charge_data = ".json_encode($charge_data).";
 	    var click_in = '".$click_in."';
 	    var click_out = '".$click_out."';
+            var script = '".$script."';
             var meter = ".$meter.";
             var spot = ".$spot.";
             var ev_sum = ".$ev_sum.";
@@ -374,6 +356,7 @@ class Meter extends Page
             var ev_color = 'rgb(75, 129, 162)';
             var vat_color = 'rgb(155, 155, 155)';
             var qty_color = 'rgb(180, 170, 80)';
+            const legendClick = Chart.defaults.plugins.legend.onClick;
 
 	    var data = {
 		labels: labels,
@@ -498,6 +481,15 @@ class Meter extends Page
                                     return 'I alt: ' + sum.toFixed(2);
                                 }
                             }
+                        },
+                        legend: {
+                            onClick: (e, li, l) => {
+                                const i = li.datasetIndex;
+                                chart.data.datasets[i].hidden =
+                                    !chart.data.datasets[i].hidden;
+                                MeanRefresh();
+                                chart.update();
+                            }
                         }
 		    },
                     responsive: true,
@@ -520,11 +512,41 @@ class Meter extends Page
 		}
 	    };
 
+            function Sum(data)
+            {
+                return data.reduce((s, a) => s + a, 0);
+            }
+
+            function MeanRefresh()
+            {
+                const len = data.datasets.length;
+                data.datasets[len - 1].data =
+                    data.datasets[len - 1].full_data.slice(start_ndx, stop_ndx);
+                if (!spot && !meter) {
+                    const qty_sum = Sum(data.datasets[len - 1].data);
+                    if (qty_sum) {
+                        const dlen = data.datasets[len - 1].data.length;
+                        var cost_sum = 0;
+                        for (let i = 0; i < len - 1; i++) {
+                            if (chart && chart.data.datasets[i].hidden) {
+                                continue;
+                            }
+                            cost_sum += Sum(data.datasets[i].data);
+                        }
+                        var cost_mean = cost_sum / qty_sum;
+                        for (let i = 0; i < dlen; i++) {
+                            data.datasets[len - 1].data[i] *= cost_mean;
+                        }
+                    }
+                }
+            }
+
             function ButtonRefresh()
             {
                 var len = stop_ndx - start_ndx;
                 var start_time;
                 var stop_time;
+                console.log({0:'ButtonRefresh enter', start_ndx, stop_ndx});
                 if (start_ndx < 0) {
                     start_ndx = 0;
                     stop_ndx = len;
@@ -536,6 +558,7 @@ class Meter extends Page
                         start_ndx = 0;
                     }
                 }
+                console.log({0:'ButtonRefresh exit', start_ndx, stop_ndx});
                 if (click_in) {
                     start_time = labels[start_ndx];
                     stop_time = labels[stop_ndx - 1];
@@ -572,10 +595,11 @@ class Meter extends Page
                     }
                 })
                 data.labels = data.full_labels.slice(start_ndx, stop_ndx);
-                for (let i = 0; i < data.datasets.length; i++) {
+                for (let i = 0; i < data.datasets.length - 1; i++) {
                     data.datasets[i].data =
                         data.datasets[i].full_data.slice(start_ndx, stop_ndx);
                 }
+                MeanRefresh();
                 if (chart) {
                     chart.update();
                 }
@@ -590,12 +614,52 @@ class Meter extends Page
 
 	    var chart = new Chart(document.getElementById('".$id."'), config);
 
+            function GetNextSteps(steps) {
+                var date;
+                var step_list = {
+                    'year':1,
+                    'quarter':1,
+                    'month':12,
+                    'day':0,
+                    'hour':24
+                }
+                date = new Date(keys[start_ndx]);
+                if (steps > 0) {
+                    date.setMonth(date.getMonth() + 1);
+                }
+                date = new Date(date.getFullYear(), date.getMonth(), 0);
+                step_list['day'] = date.getDate();
+                if (steps < 0) {
+                    return -step_list[script];
+                } else {
+                    return step_list[script];
+                }
+            }
+
             function PrevNext(e, steps) {
                 var b = e.target;
+                if (steps > 1 || steps < -1) {
+                    steps = GetNextSteps(steps);
+                }
+                console.log(steps);
                 if (b.innerText == '+') {
-                    stop_ndx += steps;
+                    if (steps > 0) {
+                        stop_ndx += steps;
+                    } else {
+                        start_ndx += steps;
+                    }
                 } else if (b.innerText == '-') {
-                    stop_ndx -= steps;
+                    if (steps > 0) {
+                        stop_ndx -= steps;
+                        if (stop_ndx <= start_ndx) {
+                            stop_ndx = start_ndx + 1;
+                        }
+                    } else {
+                        start_ndx -= steps;
+                        if (stop_ndx <= start_ndx) {
+                            start_ndx = stop_ndx - 1;
+                        }
+                    }
                 } else {
                     start_ndx += steps;
                     stop_ndx += steps;
@@ -604,22 +668,22 @@ class Meter extends Page
             }
 
             function GraphPrev(e) {
-                var steps = e.shiftKey ? click_in ? -10 : -24 : -1;
+                var steps = e.shiftKey ? -1 : -10;
                 PrevNext(e, steps);
             }
 
             function GraphPrevContext(e) {
-                var steps = click_in ? -10 : -24;
+                var steps = -1;
                 PrevNext(e, steps);
             }
 
             function GraphNext(e) {
-                var steps = e.shiftKey ? click_in ? 10 : 24 : 1;
+                var steps = e.shiftKey ? 1 : 10;
                 PrevNext(e, steps);
             }
 
             function GraphNextContext(e) {
-                var steps = click_in ? 10 : 24;
+                var steps = 1;
                 PrevNext(e, steps);
             }
 

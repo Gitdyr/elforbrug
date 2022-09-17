@@ -193,14 +193,14 @@ class Page {
         if ($this->error) {
             $div = $body->Div();
             $div->class('card mx-auto alert alert-danger');
-            $div->style('width: 40rem;');
+            $div->style('width: 35rem;');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->error);
         } elseif ($this->info) {
             $div = $body->Div();
             $div->class('card mx-auto alert alert-success');
-            $div->style('width: 40rem;');
+            $div->style('width: 35rem;');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->info);
@@ -243,7 +243,7 @@ class Page {
         $form->method('post');
         $div = $form->Div();
         $div->class('card mx-auto');
-        $div->style('width: 40rem;');
+        $div->style('width: 35rem;');
         $div = $div->Div();
         $div->class('card-body bg-light');
         $div->Center()->H1($title);

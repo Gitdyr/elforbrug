@@ -301,17 +301,19 @@ class Meter extends Page
                 $click_out = $prefix.'day';
                 break;
         }
+        $div = parent::Contents($node, $description.' pr. '.$interval);
         foreach (['Forrige', '+', '-'] as $txt) {
             $button = $node->Button($txt);
             $button->class('btn btn-secondary ms-1 float-start');
+            $button->oncontextmenu("GraphPrevContext(event)");
             $button->onclick("GraphPrev(event)");
         }
         foreach (['Næste', '+', '-'] as $txt) {
             $button = $node->Button($txt);
-            $button->class('btn btn-secondary ms-1 float-end');
+            $button->class('btn btn-secondary me-1 float-end');
+            $button->oncontextmenu("GraphNextContext(event)");
             $button->onclick("GraphNext(event)");
         }
-        $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
         $div->onclick("GraphParent()");
         $node->Script()->src('chart.js');
@@ -588,32 +590,37 @@ class Meter extends Page
 
 	    var chart = new Chart(document.getElementById('".$id."'), config);
 
-            function GraphPrev(e) {
-                var steps = e.shiftKey ? click_in ? 10 : 24 : 1;
+            function PrevNext(e, steps) {
                 var b = e.target;
                 if (b.innerText == '+') {
-                    start_ndx -= steps;
+                    stop_ndx += steps;
                 } else if (b.innerText == '-') {
-                    start_ndx += steps;
-                } else {
-                    start_ndx -= steps;
                     stop_ndx -= steps;
+                } else {
+                    start_ndx += steps;
+                    stop_ndx += steps;
                 }
                 ButtonRefresh();
             }
 
+            function GraphPrev(e) {
+                var steps = e.shiftKey ? click_in ? -10 : -24 : -1;
+                PrevNext(e, steps);
+            }
+
+            function GraphPrevContext(e) {
+                var steps = click_in ? -10 : -24;
+                PrevNext(e, steps);
+            }
+
             function GraphNext(e) {
                 var steps = e.shiftKey ? click_in ? 10 : 24 : 1;
-                var b = e.target;
-                if (b.innerText == '+') {
-                    stop_ndx += steps;
-                } else if (b.innerText == '-') {
-                    stop_ndx -= steps;
-                } else {
-                    start_ndx += steps;
-                    stop_ndx += steps;
-                }
-                ButtonRefresh();
+                PrevNext(e, steps);
+            }
+
+            function GraphNextContext(e) {
+                var steps = click_in ? 10 : 24;
+                PrevNext(e, steps);
             }
 
             function GraphParent() {

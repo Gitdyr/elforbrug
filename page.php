@@ -87,7 +87,6 @@ class Page {
                 $this->debug = true;
             }
             foreach ($_POST as $key => $val) {
-                $val = htmlspecialchars($val);
                 $this->SetCookie($key, $val);
             }
         }
@@ -138,7 +137,7 @@ class Page {
         $label->class('col-sm-4 col-form-label');
         $label->class('text-right');
         $idiv = $div->Div();
-        $idiv->class('col-sm-2');
+        $idiv->class('col-sm-3');
         $select = $idiv->Select();
         $select->class('form-select');
         $select->name($name);
@@ -163,6 +162,7 @@ class Page {
         $input->name($name);
         $input->type('text');
         $input->value($this->Cookie($name));
+        $input->size('10');
         if ($text) {
             $td->Div($text)->class('form-text');
         }
@@ -222,13 +222,13 @@ class Page {
     {
         if ($this->error) {
             $div = $body->Div();
-            $div->class('card mx-auto alert alert-danger max-vw-50');
+            $div->class('card mx-auto alert alert-danger w-50');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->error);
         } elseif ($this->info) {
             $div = $body->Div();
-            $div->class('card mx-auto alert alert-success max-vw-50');
+            $div->class('card mx-auto alert alert-success w-50');
             $div = $div->Div();
             $div->class('card-body');
             $div->Div($this->info);
@@ -270,8 +270,8 @@ class Page {
         $form = $body->Form();
         $form->method('post');
         $div = $form->Div();
-        $div->class('card mx-auto');
-        $div->style('width: 60%;');
+        $div->class('card mx-3 mx-auto');
+        $div->style('width: fit-content');
         $div = $div->Div();
         $div->class('card-body bg-light');
         $div->Center()->H1($title);

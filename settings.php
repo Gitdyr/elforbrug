@@ -43,7 +43,7 @@ class Settings extends Page
                     foreach ($c_list as $c) {
                         $k = str_replace('d_', $c, $key);
                         $v = $this->Cookie($k);
-                        $v = (float)str_replace(',', '.', $v);
+                        $v = array_sum(explode('+', str_replace(',', '.', $v)));
                         $v = str_replace('.', ',', $v);
                         $charges[$val][] = $v;
                     }
@@ -93,7 +93,6 @@ class Settings extends Page
     public function Contents($body, $title = '')
     {
         $div = parent::Contents($body, 'Indstillinger');
-        $div->parent->style('width: 90%;');
         $this->InputField($div, 'Refresh token', 'refresh_token');
         $select = $this->InputSelect($div,
             'Prisområde (DK1/DK2)',

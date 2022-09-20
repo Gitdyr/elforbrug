@@ -91,7 +91,7 @@ class Page {
             }
         }
     }
-    
+
     public function Get($var, $default = '')
     {
         if (empty($_GET[$var])) {
@@ -317,7 +317,7 @@ class Page {
 
     public function DoCurl($url, $data = array(), $method = 'GET', $progress = null)
     {
-        $ch = curl_init();  
+        $ch = curl_init();
         if ($data && $method == 'GET') {
             $filter = $data['filter'];
             unset($data['filter']);
@@ -345,7 +345,7 @@ class Page {
             curl_setopt($ch, CURLOPT_NOPROGRESS, false);
         }
 
-        $data = curl_exec($ch);      
+        $data = curl_exec($ch);
         if (curl_errno($ch)) {
             $this->info = curl_getinfo($ch);
             $error = curl_error($ch);

@@ -381,6 +381,13 @@ class Meter extends Page
                 $table = array_slice($table, 0, $stop_ndx + $limit);
             }
         }
+        array_shift($tables);
+        array_shift($tables);
+        foreach ($tables as &$table) {
+            foreach ($table as &$val) {
+                $val = round($val, 3);
+            }
+        }
 	$node->Script("
 	    var labels = ".json_encode($labels).";
 	    var keys = ".json_encode($keys).";
@@ -767,14 +774,21 @@ class Meter extends Page
         if (!empty($this->skip_len)) {
             $script = "
                 var bar = document.getElementsByClassName('progress');
-                bar[0].remove();";
+                for (var i = 0; i < bar.length; i++) {
+                    bar[i].remove();
+                }
+            ";
             $node->Script($script);
-            printf("<script>%s</script>\n", $script);
             ob_start();
             $this->html->Display();
             $s = ob_get_contents();
             ob_end_clean();
-            print substr($s, $this->skip_len);
+            $l = strstr($s, '<script src="chart.js">');
+            if ($l !== false) {
+                print $l;
+            } else {
+                print $s;
+            }
         }
     }
 }

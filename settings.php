@@ -24,6 +24,7 @@ class Settings extends Page
             foreach ($_POST as $key => $val) {
                 $pk = substr($key, 0, 2);
                 if ($key == 'refresh_token') {
+                    $_POST[$key] = $val = trim($val);
                     if (!preg_match('/^[0-9A-Za-z.]*$/', $val)) {
                         $this->error = 'Ulovlige tegn i token';
                         return;
@@ -99,16 +100,17 @@ class Settings extends Page
             ['DK1', 'DK2'],
             'price_area',
             'DK1 er Danmark vest, DK2 er Danmark øst');
-        $div->Center()->H2('Omkostninger ekskl. moms');
+        $div->H2('Omkostninger ekskl. moms')->class('text-center');
         $div->Br();
         $table = $div->Table();
         $tr = $table->Tr();
-        $th = $tr->Th()->Center('Startdato');
-        $th = $tr->Th()->Center('Pr. kWh<br>06-17');
-        $th = $tr->Th()->Center('Pr. kWh<br>17-21');
-        $th = $tr->Th()->Center('Pr. kWh<br>21-24');
-        $th = $tr->Th()->Center('Pr. kWh<br>24-06');
-        $th = $tr->Th()->Center('Pr. time');
+        $tr->class('text-center');
+        $th = $tr->Th('Startdato');
+        $th = $tr->Th('Pr. kWh<br>06-17');
+        $th = $tr->Th('Pr. kWh<br>17-21');
+        $th = $tr->Th('Pr. kWh<br>21-24');
+        $th = $tr->Th('Pr. kWh<br>24-06');
+        $th = $tr->Th('Pr. time');
         for ($i = 0; $i < $this->charge_count; $i++) {
             $tr = $table->Tr();
             $this->InputCell($tr, $name = 'd_charge_'.$i);

@@ -106,7 +106,8 @@ class Meter extends Page
         if ($stop > time()) {
             $stop = time();
         }
-        if (empty($this->token)) {
+        $id = $this->Cookie('meteringPointId');
+        if (empty($this->token) || empty($id)) {
             $prices = $this->Prices($sstart, $sstop);
             foreach ($prices as list($time, $price)) {
                 $time = strtotime($time);
@@ -120,7 +121,6 @@ class Meter extends Page
         $url .= '/'.date('Y-m-d', $start);
         $url .= '/'.date('Y-m-d', $stop);
         $url .= '/Hour';
-        $id = $this->Cookie('meteringPointId');
         $data = json_decode('{"meteringPoints":{"meteringPoint":["'.$id.'"]}}');
         $progress = array($this, 'ProgressBar');
         $json = $this->DoCurl($url, $data, 'POST', $progress);
@@ -247,16 +247,22 @@ class Meter extends Page
         $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
         $div->onclick('GraphParent()');
-        $this->Progress($node);
 
         if ($this->Get('force_update') ||
             empty($_SESSION['costs']) ||
             $_SESSION['timeout'] < time())
         {
+            $this->Progress($node);
             $sstart = '2020-10-01';
             $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
             $_SESSION['costs'] = $this->Costs($sstart, $sstop);
-            $_SESSION['timeout'] = time() + 3600;
+            $time = time();
+            if (date('H', $time) < 13) {
+                $date = date('Y-m-d 13:00:00', $time);
+            } else {
+                $date = date('Y-m-d 00:00:00', $time + 24 * 3600);
+            }
+            $_SESSION['timeout'] = strtotime($date);
         }
         $costs = $_SESSION['costs'];
         $cost_data = array();

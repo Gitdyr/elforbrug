@@ -274,7 +274,7 @@ class Page {
         $div->style('width: fit-content');
         $div = $div->Div();
         $div->class('card-body bg-light');
-        $div->Center()->H1($title);
+        $div->H1($title)->class('text-center');
         return $div;
     }
 

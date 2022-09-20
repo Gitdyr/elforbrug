@@ -11,6 +11,56 @@ include('page.php');
 
 class Meter extends Page
 {
+    public function ProgressBar($resource, $dl_size, $dl, $ul_size, $ul)
+    {
+        if ($dl_size == 0 && isset($this->download_total)) {
+            $dl_size = $this->download_total;
+        }
+        if ($dl_size) {
+            $progress = $dl / $dl_size * 100;
+        } else {
+            $progress = 0;
+        }
+        if ($progress < 100) {
+            return;
+        }
+        if (isset($this->progress_color)) {
+            print "
+            <script>
+                var bar = document.getElementsByClassName('progress-bar');
+                bar[0].className = 'progress-bar $this->progress_color';
+            </script>\n";
+            unset($this->progress_color);
+        }
+        print "
+        <script>
+            var bar = document.getElementsByClassName('progress-bar');
+            bar[0].style.width = '".$progress."%';
+            console.log($dl_size + ' ' + $dl + ' ' + $progress);
+        </script>\n";
+        ob_flush();
+        flush();
+    }
+
+    public function Progress($node)
+    {
+        $div = $node->Div();
+        $div->class('progress mx-5');
+        $div = $div->Div();
+        $div->class('progress-bar');
+        $div->role('progressbar');
+        $div->style('width: 0%');
+        ob_start();
+        $this->html->Display();
+        $s = ob_get_contents();
+        $this->skip_len = strlen($s);
+        $this->display_off = true;
+        ob_end_clean();
+        print substr($s, 0, -18);
+        ob_flush();
+        flush();
+    }
+
     public function Prices($start, $stop)
     {
         $prices = array();
@@ -18,6 +68,7 @@ class Meter extends Page
         $start = strtotime($start);
         $stop = substr($stop, 0, 16);
         $stop = strtotime($stop);
+        $this->download_total = ($stop - $start) / 26.78;
         $url = 'https://api.energidataservice.dk/dataset/Elspotprices';
         $price_area = $this->Cookie('price_area');
         if (!$price_area) {
@@ -32,7 +83,9 @@ class Meter extends Page
             'filter' => '{"PriceArea":"'.$price_area.'"}'
         );
         // $this->Dump($data);
-        $json = $this->DoCurl($url, $data);
+        $progress = array($this, 'ProgressBar');
+        $this->progress_color = 'bg-success';
+        $json = $this->DoCurl($url, $data, 'GET', $progress);
         $response = json_decode($json);
         foreach ($response->records as $record) {
             $price = $record->SpotPriceDKK / 1000;
@@ -69,7 +122,8 @@ class Meter extends Page
         $url .= '/Hour';
         $id = $this->Cookie('meteringPointId');
         $data = json_decode('{"meteringPoints":{"meteringPoint":["'.$id.'"]}}');
-        $json = $this->DoCurl($url, $data, 'POST');
+        $progress = array($this, 'ProgressBar');
+        $json = $this->DoCurl($url, $data, 'POST', $progress);
         $response = json_decode($json);
         if (!$response) {
             $this->Dump($this->info);
@@ -131,12 +185,6 @@ class Meter extends Page
 
     public function Chart($node, $start, $len, $pattern, $loff, $llen)
     {
-        if (empty($_SESSION['costs']) || $_SESSION['timeout'] < time()) {
-            $sstart = '2020-10-01';
-            $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
-            $_SESSION['costs'] = $this->Costs($sstart, $sstop);
-            $_SESSION['timeout'] = time() + 3600;
-        }
         $script = explode('_', basename($_SERVER['SCRIPT_NAME'], '.php'));
         if (count($script) == 1) {
             $prefix = '';
@@ -146,6 +194,70 @@ class Meter extends Page
         $script = end($script);
         $meter = $prefix == 'm_' ? 1 : 0;
         $spot = $prefix == 's_' ? 1 : 0;
+        switch ($prefix) {
+            case '':
+                $description = 'Udgift';
+                break;
+            case 'm_':
+                $description = 'Forbrug';
+                break;
+            case 's_':
+                $description = 'Pris';
+                break;
+        }
+        switch ($script) {
+            case 'year':
+                $interval = 'år';
+                $click_in = $prefix.'quarter';
+                $click_out = '';
+                break;
+            case 'quarter':
+                $interval = 'kvartal';
+                $click_in = $prefix.'month';
+                $click_out = $prefix.'year';
+                break;
+            case 'month':
+                $interval = 'måned';
+                $click_in = $prefix.'day';
+                $click_out = $prefix.'quarter';
+                break;
+            case 'day':
+                $interval = 'dag';
+                $click_in = $prefix.'hour';
+                $click_out = $prefix.'month';
+                break;
+            default:
+                $interval = 'time';
+                $click_in = '';
+                $click_out = $prefix.'day';
+                break;
+        }
+        foreach (['Forrige', '+', '-'] as $txt) {
+            $button = $node->Button($txt);
+            $button->class('btn btn-secondary m-1 float-start');
+            $button->oncontextmenu('GraphPrevContext(event)');
+            $button->onclick('GraphPrev(event)');
+        }
+        foreach (['Næste', '+', '-'] as $txt) {
+            $button = $node->Button($txt);
+            $button->class('btn btn-secondary m-1 float-end');
+            $button->oncontextmenu('GraphNextContext(event)');
+            $button->onclick('GraphNext(event)');
+        }
+        $div = parent::Contents($node, $description.' pr. '.$interval);
+        $div->class('btn');
+        $div->onclick('GraphParent()');
+        $this->Progress($node);
+
+        if ($this->Get('force_update') ||
+            empty($_SESSION['costs']) ||
+            $_SESSION['timeout'] < time())
+        {
+            $sstart = '2020-10-01';
+            $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
+            $_SESSION['costs'] = $this->Costs($sstart, $sstop);
+            $_SESSION['timeout'] = time() + 3600;
+        }
         $costs = $_SESSION['costs'];
         $cost_data = array();
         $ev_data = array();
@@ -229,59 +341,6 @@ class Meter extends Page
             $charge_data[] = $charge_sum / $count;
         }
 
-        switch ($prefix) {
-            case '':
-                $description = 'Udgift';
-                break;
-            case 'm_':
-                $description = 'Forbrug';
-                break;
-            case 's_':
-                $description = 'Pris';
-                break;
-        }
-        switch ($script) {
-            case 'year':
-                $interval = 'år';
-                $click_in = $prefix.'quarter';
-                $click_out = '';
-                break;
-            case 'quarter':
-                $interval = 'kvartal';
-                $click_in = $prefix.'month';
-                $click_out = $prefix.'year';
-                break;
-            case 'month':
-                $interval = 'måned';
-                $click_in = $prefix.'day';
-                $click_out = $prefix.'quarter';
-                break;
-            case 'day':
-                $interval = 'dag';
-                $click_in = $prefix.'hour';
-                $click_out = $prefix.'month';
-                break;
-            default:
-                $interval = 'time';
-                $click_in = '';
-                $click_out = $prefix.'day';
-                break;
-        }
-        foreach (['Forrige', '+', '-'] as $txt) {
-            $button = $node->Button($txt);
-            $button->class('btn btn-secondary m-1 float-start');
-            $button->oncontextmenu("GraphPrevContext(event)");
-            $button->onclick("GraphPrev(event)");
-        }
-        foreach (['Næste', '+', '-'] as $txt) {
-            $button = $node->Button($txt);
-            $button->class('btn btn-secondary m-1 float-end');
-            $button->oncontextmenu("GraphNextContext(event)");
-            $button->onclick("GraphNext(event)");
-        }
-        $div = parent::Contents($node, $description.' pr. '.$interval);
-        $div->class('btn');
-        $div->onclick("GraphParent()");
         $node->Script()->src('chart.js');
 	$id = 'myChart';
         $div = $node->Div();
@@ -699,6 +758,18 @@ class Meter extends Page
                 }
             }
         ");
+        if (!empty($this->skip_len)) {
+            $script = "
+                var bar = document.getElementsByClassName('progress');
+                bar[0].remove();";
+            $node->Script($script);
+            printf("<script>%s</script>\n", $script);
+            ob_start();
+            $this->html->Display();
+            $s = ob_get_contents();
+            ob_end_clean();
+            print substr($s, $this->skip_len);
+        }
     }
 }
 

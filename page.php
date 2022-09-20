@@ -294,7 +294,9 @@ class Page {
         $this->html = new HtmlNode();
         $this->Header();
         $this->Body();
-        $this->html->Display();
+        if (empty($this->display_off)) {
+            $this->html->Display();
+        }
     }
 
     public function Dump($data)
@@ -313,7 +315,7 @@ class Page {
         return $val;
     }
 
-    public function DoCurl($url, $data = array(), $method = 'GET')
+    public function DoCurl($url, $data = array(), $method = 'GET', $progress = null)
     {
         $ch = curl_init();  
         if ($data && $method == 'GET') {
@@ -338,6 +340,10 @@ class Page {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
+        if ($progress) {
+            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, $progress);
+            curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+        }
 
         $data = curl_exec($ch);      
         if (curl_errno($ch)) {

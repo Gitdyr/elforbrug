@@ -341,8 +341,10 @@ class Page {
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         if ($progress) {
-            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, $progress);
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, $progress);
+            // curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, $progress);
             curl_setopt($ch, CURLOPT_NOPROGRESS, false);
+            curl_setopt($ch, CURLOPT_BUFFERSIZE, 0x10000);
         }
 
         $data = curl_exec($ch);

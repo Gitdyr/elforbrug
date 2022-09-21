@@ -11,7 +11,7 @@ include('page.php');
 
 class Meter extends Page
 {
-    public function ProgressBar($resource, $dl_size, $dl, $ul_size, $ul)
+    public function ProgressBar_old($resource, $dl_size, $dl, $ul_size, $ul)
     {
         if ($dl_size == 0 && isset($this->download_total)) {
             $dl_size = $this->download_total;
@@ -32,14 +32,46 @@ class Meter extends Page
             </script>\n";
             unset($this->progress_color);
         }
+        for ($j = 0; $j < 128; $j++) {
+            print "<!---------------------------->\n";
+        }
+        flush();
+        ob_flush();
+    }
+
+    public function ProgressBar($resource, $str)
+    {
+        $this->buffer[] = $str;
+        $len = strlen($str);
+        $this->dl += $len;
+        $dl = $this->dl;
+        $dl_size = $this->dl_size;
+        if ($dl_size) {
+            $progress = $dl / $dl_size * 100;
+        } else {
+            $progress = 0;
+        }
+        if (isset($this->progress_color)) {
+            print "
+            <script>
+                var bar = document.getElementsByClassName('progress-bar');
+                bar[0].className = 'progress-bar $this->progress_color';
+            </script>\n";
+            unset($this->progress_color);
+        }
         print "
         <script>
             var bar = document.getElementsByClassName('progress-bar');
             bar[0].style.width = '".$progress."%';
             console.log($dl_size + ' ' + $dl + ' ' + $progress);
-        </script>\n";
-        ob_flush();
+        </script>
+        ";
+        for ($j = 0; $j < 128; $j++) {
+            print "<!---------------------------->\n";
+        }
         flush();
+        ob_flush();
+        return strlen($str);
     }
 
     public function Progress($node)
@@ -53,12 +85,12 @@ class Meter extends Page
         ob_start();
         $this->html->Display();
         $s = ob_get_contents();
+        ob_clean();
         $this->skip_len = strlen($s);
         $this->display_off = true;
-        ob_end_clean();
         print substr($s, 0, -18);
-        ob_flush();
         flush();
+        ob_flush();
     }
 
     public function Prices($start, $stop)
@@ -68,7 +100,9 @@ class Meter extends Page
         $start = strtotime($start);
         $stop = substr($stop, 0, 16);
         $stop = strtotime($stop);
-        $this->download_total = ($stop - $start) / 26.78;
+        $this->buffer = array();
+        $this->dl = 0;
+        $this->dl_size = ($stop - $start) / 26.78;
         $url = 'https://api.energidataservice.dk/dataset/Elspotprices';
         $price_area = $this->Cookie('price_area');
         if (!$price_area) {
@@ -86,6 +120,7 @@ class Meter extends Page
         $progress = array($this, 'ProgressBar');
         $this->progress_color = 'bg-success';
         $json = $this->DoCurl($url, $data, 'GET', $progress);
+        $json = implode('', $this->buffer);
         $response = json_decode($json);
         foreach ($response->records as $record) {
             $price = $record->SpotPriceDKK / 1000;
@@ -116,6 +151,9 @@ class Meter extends Page
             }
             return $costs;
         }
+        $this->buffer = array();
+        $this->dl = 0;
+        $this->dl_size = ($stop - $start) / 43.92;
         $url = 'https://api.eloverblik.dk/customerapi/api';
         $url .= '/meterdata/gettimeseries';
         $url .= '/'.date('Y-m-d', $start);
@@ -124,6 +162,7 @@ class Meter extends Page
         $data = json_decode('{"meteringPoints":{"meteringPoint":["'.$id.'"]}}');
         $progress = array($this, 'ProgressBar');
         $json = $this->DoCurl($url, $data, 'POST', $progress);
+        $json = implode('', $this->buffer);
         $response = json_decode($json);
         if (!$response) {
             $this->Dump($this->info);
@@ -779,16 +818,17 @@ class Meter extends Page
                 }
             ";
             $node->Script($script);
-            ob_start();
             $this->html->Display();
             $s = ob_get_contents();
-            ob_end_clean();
+            ob_clean();
             $l = strstr($s, '<script src="chart.js">');
             if ($l !== false) {
                 print $l;
             } else {
                 print $s;
             }
+            ob_flush();
+            ob_clean();
         }
     }
 }

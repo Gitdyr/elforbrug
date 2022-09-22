@@ -11,32 +11,18 @@ include('page.php');
 
 class Meter extends Page
 {
-    public function ProgressBar_old($resource, $dl_size, $dl, $ul_size, $ul)
+    public function HandlePost()
     {
-        if ($dl_size == 0 && isset($this->download_total)) {
-            $dl_size = $this->download_total;
+        parent::HandlePost();
+        if ($_POST) {
+            $ids = explode(',', $this->Cookie('meteringPoints'));
+            foreach ($ids as $val) {
+                list($id, $type) = explode(':', $val);
+                if ($type == $this->Cookie('typeOfMP')) {
+                    $this->SetCookie('meteringPointId', $id);
+                }
+            }
         }
-        if ($dl_size) {
-            $progress = $dl / $dl_size * 100;
-        } else {
-            $progress = 0;
-        }
-        if ($progress < 100) {
-            return;
-        }
-        if (isset($this->progress_color)) {
-            print "
-            <script>
-                var bar = document.getElementsByClassName('progress-bar');
-                bar[0].className = 'progress-bar $this->progress_color';
-            </script>\n";
-            unset($this->progress_color);
-        }
-        for ($j = 0; $j < 128; $j++) {
-            print "<!---------------------------->\n";
-        }
-        flush();
-        ob_flush();
     }
 
     public function ProgressBar($resource, $str)
@@ -283,18 +269,29 @@ class Meter extends Page
             $button->oncontextmenu('GraphNextContext(event)');
             $button->onclick('GraphNext(event)');
         }
+        $id = $this->Cookie('meteringPointId');
+        $ids = explode(',', $this->Cookie('meteringPoints'));
         $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
         $div->onclick('GraphParent()');
+        if (count($ids) > 1) {
+            $keys = array();
+            foreach ($ids as $key) {
+                $key = explode(':', $key);
+                $keys[] = end($key);
+            }
+            $select = $this->InputSelect($div->parent, '', $keys, 'typeOfMP');
+            $select->onchange('this.form.submit()');
+        }
 
         if ($this->Get('force_update') ||
-            empty($_SESSION['costs']) ||
+            empty($_SESSION['costs'][$id]) ||
             $_SESSION['timeout'] < time())
         {
             $this->Progress($node);
             $sstart = '2020-10-01';
             $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
-            $_SESSION['costs'] = $this->Costs($sstart, $sstop);
+            $_SESSION['costs'][$id] = $this->Costs($sstart, $sstop);
             $time = time();
             if (date('H', $time) < 13) {
                 $date = date('Y-m-d 13:00:00', $time);
@@ -303,7 +300,7 @@ class Meter extends Page
             }
             $_SESSION['timeout'] = strtotime($date);
         }
-        $costs = $_SESSION['costs'];
+        $costs = $_SESSION['costs'][$id];
         $cost_data = array();
         $ev_data = array();
         $iv_data = array();

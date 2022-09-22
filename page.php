@@ -133,11 +133,17 @@ class Page {
         }
         $div = $div->Div();
         $div->class('row mb-3');
-        $label = $div->Label($title);
-        $label->class('col-sm-4 col-form-label');
-        $label->class('text-right');
+        if ($title) {
+            $label = $div->Label($title);
+            $label->class('col-sm-4 col-form-label');
+            $label->class('text-right');
+        }
         $idiv = $div->Div();
-        $idiv->class('col-sm-3');
+        if ($title) {
+            $idiv->class('col-sm-3');
+        } else {
+            $idiv->class('col-sm-5 mx-auto');
+        }
         $select = $idiv->Select();
         $select->class('form-select');
         $select->name($name);

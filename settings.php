@@ -77,7 +77,7 @@ class Settings extends Page
                 if ($json) {
                     $this->info = 'Indstillinger opdateret';
                     $res = json_decode($json);
-                    setcookie('token', $res->result, time() + 3600);
+                    $this->SetCookie('token', $res->result);
                     $this->token = $res->result;
                     $url = 'https://api.eloverblik.dk/customerapi/api';
                     $url .= '/meteringpoints/meteringpoints';
@@ -85,7 +85,17 @@ class Settings extends Page
                     $response = json_decode($json);
                     $result = reset($response->result);
                     $id = $result->meteringPointId;
-                    setcookie('meteringPointId', $id, time() + 0x2000000);
+                    $type = $result->typeOfMP;
+                    $this->SetCookie('meteringPointId', $id);
+                    $this->SetCookie('typeOfMP', $type);
+                    $metering_points[] =
+                        $result->meteringPointId.':'.$result->typeOfMP;
+                    foreach ($result->childMeteringPoints as $point) {
+                        $metering_points[] =
+                            $point->meteringPointId.':'.$point->typeOfMP;
+                    }
+                    $data = implode(',', $metering_points);
+                    $this->SetCookie('meteringPoints', $data);
                 }
             }
         }

@@ -14,8 +14,8 @@ For at kunne hente målerdata, skal du logge ind hos https://eloverblik.dk/. Kli
 
 Følg vejledningen og opret et refresh token. Start værktøjet og klik på "Indstillinger". Her angives det refresh token, du fik fra eloverblik.dk.
 
-## Testserver
-Jeg har opsat en testserver med værktøjet på http://elforbrug.coolpage.biz.
+## Server
+Jeg har opsat en server med værktøjet på https://www.dataco.dk.
 
 ## Licens
 MIT License. Copyright (c) 2022 Kjeld Borch Egevang

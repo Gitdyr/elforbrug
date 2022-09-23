@@ -49,7 +49,6 @@ class Meter extends Page
         <script>
             var bar = document.getElementsByClassName('progress-bar');
             bar[0].style.width = '".$progress."%';
-            console.log($dl_size + ' ' + $dl + ' ' + $progress);
         </script>
         ";
         for ($j = 0; $j < 128; $j++) {
@@ -201,7 +200,7 @@ class Meter extends Page
         return array(str_replace(',', '.', $ev), str_replace(',', '.', $iv));
     }
 
-    public function Chart($node, $start, $len, $pattern, $loff, $llen)
+    public function Chart($body, $start, $len, $pattern, $loff, $llen)
     {
         $script = explode('_', basename($_SERVER['SCRIPT_NAME'], '.php'));
         if (count($script) == 1) {
@@ -250,6 +249,7 @@ class Meter extends Page
                 $click_out = $prefix.'day';
                 break;
         }
+        $node = $body->Div();
         foreach (['Forrige', '+', '-'] as $txt) {
             $button = $node->Button($txt);
             $button->class('btn btn-secondary m-1 float-start');
@@ -379,9 +379,13 @@ class Meter extends Page
             $qty_data[] = $qty_sum;
         }
 
+        $node = $body->Div();
         $node->Script()->src('chart.js');
 	$id = 'myChart';
         $div = $node->Div();
+        $body->parent->style('height: 100%');
+        $body->style('height: 100%');
+        $div->style('height: 100%');
         $canvas = $div->Canvas();
         $canvas->id($id);
         // Limit to 1000 entries
@@ -444,6 +448,19 @@ class Meter extends Page
             {
                 return data.reduce((s, a) => s + a, 0);
             }
+
+            function ChartResize()
+            {
+                var height = document.body.clientHeight - 40;
+                for (var i = 0; i < document.body.children.length - 1; i++) {
+                    var h = document.body.children[i].clientHeight;
+                    height -= document.body.children[i].clientHeight;
+                }
+                document.body.children[i].style.height = height + 'px';
+            }
+
+            window.onload = ChartResize();
+            window.addEventListener('resize', ChartResize);
 
             if (!meter) {
                 var tables = [cost_data, iv_data, ev_data]
@@ -599,6 +616,7 @@ class Meter extends Page
                         }
 		    },
                     responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
                         x: {
                             stacked: true

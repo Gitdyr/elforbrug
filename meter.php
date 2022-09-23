@@ -191,18 +191,11 @@ class Meter extends Page
         $dv = $ev = $iv = 0;
         for ($i = 0; $i < $this->charge_count; $i++) {
             $dv = $this->Cookie('d_charge_'.$i);
-            if ($dv && $date >= $dv) {
-                $hour = (int)substr($date, 11, 2);
-                if ($hour >= 6 && $hour < 17) {
-                    $ev = $this->Cookie('e6_charge_'.$i);
-                } elseif ($hour >= 17 && $hour < 21) {
-                    $ev = $this->Cookie('e17_charge_'.$i);
-                } elseif ($hour >= 21) {
-                    $ev = $this->Cookie('e21_charge_'.$i);
-                } else {
-                    $ev = $this->Cookie('e24_charge_'.$i);
+            if ($dv && substr($date, 0, 10) >= substr($dv, 0, 10)) {
+                if (substr($date, 11, 5) >= substr($dv, 11, 5)) {
+                    $ev = $this->Cookie('e_charge_'.$i);
+                    $iv = $this->Cookie('i_charge_'.$i);
                 }
-                $iv = $this->Cookie('i_charge_'.$i);
             }
         }
         return array(str_replace(',', '.', $ev), str_replace(',', '.', $iv));
@@ -280,7 +273,7 @@ class Meter extends Page
                 $key = explode(':', $key);
                 $keys[] = end($key);
             }
-            $select = $this->InputSelect($div->parent, '', $keys, 'typeOfMP');
+            $select = $this->InputSelect($div->parent, 'typeOfMP', $keys);
             $select->onchange('this.form.submit()');
         }
 

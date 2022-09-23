@@ -17,7 +17,25 @@ class Page {
     public $error = false;
     public $info = false;
     public $detail = false;
-    public $charge_count = 10;
+    public $charge_count = 5;
+
+    public function __construct()
+    {
+        $charge_count = 0;
+        if ($_POST) {
+            $cookies = $_POST;
+        } else {
+            $cookies = $_COOKIE;
+        }
+        foreach ($cookies as $k => $v) {
+            if ($v && substr($k, 0, 8) == 'd_charge') {
+                $charge_count++;
+            }
+        }
+        if ($charge_count >= $this->charge_count) {
+            $this->charge_count = $charge_count + 1;
+        }
+    }
 
     public function Header()
     {
@@ -127,7 +145,7 @@ class Page {
         return $input;
     }
 
-    public function InputSelect($div, $title, $options, $name = null, $text = null)
+    public function InputSelect($div, $name, $options, $title = null, $text = null)
     {
         if ($name == null) {
             $name = strtolower($title);
@@ -161,7 +179,23 @@ class Page {
         return $select;
     }
 
-    public function InputCell($tr, $name = null, $text = null)
+    public function InputSelectCell($tr, $name, $options)
+    {
+        $td = $tr->Td();
+        $select = $td->Select();
+        $select->class('form-select');
+        $select->name($name);
+        foreach ($options as $option_text) {
+            $option = $select->Option($option_text);
+            $option->value($option_text);
+            if ($option_text == $this->Cookie($name)) {
+                $option->selected('true');
+            }
+        }
+        return $select;
+    }
+
+    public function InputCell($tr, $name, $text = null)
     {
         $td = $tr->Td();
         $input = $td->Input();

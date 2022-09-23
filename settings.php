@@ -19,9 +19,8 @@ class Settings extends Page
         $old_refresh_token = $this->Cookie('refresh_token');
         parent::HandlePost();
         if ($_POST) {
-            $_SESSION['costs'] = array();
             $charges = array();
-            $c_list = array('e6_', 'e17_', 'e21_', 'e24_', 'i_');
+            $c_list = array('e_', 'i_');
             foreach ($_POST as $key => $val) {
                 $pk = substr($key, 0, 2);
                 if ($key == 'refresh_token') {
@@ -42,12 +41,18 @@ class Settings extends Page
                         $this->error = 'Datoformat skal være åååå-mmm-dd';
                         return;
                     }
+                    $k = str_replace('d_', 'b_', $key);
+                    $b_val = $this->Cookie($k);
+                    if (empty($b_val)) {
+                        $b_val = '00:00';
+                    }
+                    $sort_key = $val.' '.$b_val;
                     foreach ($c_list as $c) {
                         $k = str_replace('d_', $c, $key);
                         $v = $this->Cookie($k);
                         $v = array_sum(explode('+', str_replace(',', '.', $v)));
                         $v = str_replace('.', ',', $v);
-                        $charges[$val][] = $v;
+                        $charges[$sort_key][] = $v;
                     }
                 }
             }
@@ -57,10 +62,13 @@ class Settings extends Page
             for ($i = 0; $i < $this->charge_count; $i++) {
                 if (empty($keys[$i])) {
                     $dv = '';
+                    $bv = '';
                 } else {
                     $dv = $keys[$i];
+                    $bv = substr($keys[$i], 11);
                 }
                 $this->SetCookie('d_charge_'.$i, $dv);
+                $this->SetCookie('b_charge_'.$i, $bv);
                 foreach ($c_list as $c) {
                     if (empty($values[$i])) {
                         $v = '';
@@ -72,10 +80,12 @@ class Settings extends Page
             }
             $refresh_token = $this->Cookie('refresh_token');
             if (!$refresh_token) {
+                $_SESSION['costs'] = array();
                 $this->SetCookie('token', '');
                 return;
             }
             if ($refresh_token != $old_refresh_token) {
+                $_SESSION['costs'] = array();
                 $this->token = $refresh_token;
                 $url = 'https://api.eloverblik.dk/customerapi/api/token';
                 $json = $this->DoCurl($url);
@@ -117,9 +127,9 @@ class Settings extends Page
         $div = parent::Contents($body, 'Indstillinger');
         $this->InputField($div, 'Refresh token', 'refresh_token');
         $select = $this->InputSelect($div,
-            'Prisområde (DK1/DK2)',
-            ['DK1', 'DK2'],
             'price_area',
+            ['DK1', 'DK2'],
+            'Prisområde (DK1/DK2)',
             'DK1 er Danmark vest, DK2 er Danmark øst');
         $div->H2('Omkostninger ekskl. moms')->class('text-center');
         $div->Br();
@@ -127,19 +137,21 @@ class Settings extends Page
         $tr = $table->Tr();
         $tr->class('text-center');
         $th = $tr->Th('Startdato');
-        $th = $tr->Th('Pr. kWh<br>06-17');
-        $th = $tr->Th('Pr. kWh<br>17-21');
-        $th = $tr->Th('Pr. kWh<br>21-24');
-        $th = $tr->Th('Pr. kWh<br>24-06');
+        $th = $tr->Th('Tidsinterval<br>Start');
+        $th = $tr->Th('Pr. kWh');
         $th = $tr->Th('Pr. time');
+        $b_options = array('');
+        for ($i = 0; $i < 24; $i++) {
+            $b_options[] = sprintf("%02d:00", $i);
+        }
         for ($i = 0; $i < $this->charge_count; $i++) {
+            $sort_key = $this->Cookie('d_charge_'.$i);
+            $_COOKIE['d_charge_'.$i] = substr($sort_key, 0, 10);
             $tr = $table->Tr();
-            $this->InputCell($tr, $name = 'd_charge_'.$i);
-            $this->InputCell($tr, $name = 'e6_charge_'.$i);
-            $this->InputCell($tr, $name = 'e17_charge_'.$i);
-            $this->InputCell($tr, $name = 'e21_charge_'.$i);
-            $this->InputCell($tr, $name = 'e24_charge_'.$i);
-            $this->InputCell($tr, $name = 'i_charge_'.$i);
+            $this->InputCell($tr, 'd_charge_'.$i);  // Date
+            $this->InputSelectCell($tr, 'b_charge_'.$i, $b_options);  // First
+            $this->InputCell($tr, 'e_charge_'.$i);  // Energi
+            $this->InputCell($tr, 'i_charge_'.$i);  // Interval
         }
         $div->Br();
         $div->P('Startdatoen angiver starten af perioden. '.

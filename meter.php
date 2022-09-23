@@ -45,6 +45,7 @@ class Meter extends Page
             </script>\n";
             unset($this->progress_color);
         }
+        /*
         print "
         <script>
             var bar = document.getElementsByClassName('progress-bar');
@@ -54,6 +55,7 @@ class Meter extends Page
         for ($j = 0; $j < 128; $j++) {
             print "<!---------------------------->\n";
         }
+        */
         flush();
         ob_flush();
         return strlen($str);
@@ -249,6 +251,8 @@ class Meter extends Page
                 $click_out = $prefix.'day';
                 break;
         }
+        $body->parent->style('height: 100%');
+        $body->style('height: 100%');
         $node = $body->Div();
         foreach (['Forrige', '+', '-'] as $txt) {
             $button = $node->Button($txt);
@@ -383,8 +387,6 @@ class Meter extends Page
         $node->Script()->src('chart.js');
 	$id = 'myChart';
         $div = $node->Div();
-        $body->parent->style('height: 100%');
-        $body->style('height: 100%');
         $div->style('height: 100%');
         $canvas = $div->Canvas();
         $canvas->id($id);
@@ -452,11 +454,15 @@ class Meter extends Page
             function ChartResize()
             {
                 var height = document.body.clientHeight - 40;
-                for (var i = 0; i < document.body.children.length - 1; i++) {
-                    var h = document.body.children[i].clientHeight;
+                var j = 0;
+                for (var i = 0; i < document.body.children.length; i++) {
                     height -= document.body.children[i].clientHeight;
+                    if (document.body.children[i].nodeName == 'DIV') {
+                        j = i;
+                    }
                 }
-                document.body.children[i].style.height = height + 'px';
+                height += document.body.children[j].clientHeight;
+                document.body.children[j].style.height = height + 'px';
             }
 
             window.onload = ChartResize();

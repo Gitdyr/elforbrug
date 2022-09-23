@@ -301,18 +301,14 @@ class Meter extends Page
             $_SESSION['timeout'] = strtotime($date);
         }
         $costs = $_SESSION['costs'][$id];
-        $cost_data = array();
         $ev_data = array();
         $iv_data = array();
         $qty_data = array();
-        $price_data = array();
-        $charge_data = array();
-        $cost_sum = null;
+        $cost_data = array();
         $ev_sum = null;
         $iv_sum = null;
         $qty_sum = null;
-        $price_sum = null;
-        $charge_sum = null;
+        $cost_sum = null;
         if (!is_array($pattern)) {
           $pattern = array($pattern);
         }
@@ -329,22 +325,22 @@ class Meter extends Page
         $start = $this->Get('start', $start);
         foreach ($costs as list($key, $qty, $price)) {
             list($ev, $iv) = $this->GetCharges($key);
-            $cost = $qty * $price;
-            $cost += $qty * $ev + $iv;
             if (in_array(substr($key, $poff, $plen), $pattern)) {
                 if ($cost_sum !== null) {
-                    $cost_data[] = $cost_sum;
-                    $ev_data[] = $ev_sum;
-                    $iv_data[] = $iv_sum;
+                    if ($spot) {
+                        $ev_data[] = $ev_sum / $count;
+                        $iv_data[] = $iv_sum / $count;
+                        $cost_data[] = $cost_sum / $count;
+                    } else {
+                        $ev_data[] = $ev_sum;
+                        $iv_data[] = $iv_sum;
+                        $cost_data[] = $cost_sum;
+                    }
                     $qty_data[] = $qty_sum;
-                    $price_data[] = $price_sum / $count;
-                    $charge_data[] = $charge_sum / $count;
-                    $cost_sum = 0;
                     $ev_sum = 0;
                     $iv_sum = 0;
                     $qty_sum = 0;
-                    $price_sum = 0;
-                    $charge_sum = 0;
+                    $cost_sum = 0;
                     $count = 0;
                     $ndx++;
                     if ($qty) {
@@ -358,12 +354,15 @@ class Meter extends Page
                 $labels[] = substr($key, $loff, $llen);
                 $keys[] = $key;
             }
-            $cost_sum += $cost;
-            $ev_sum += $ev * $qty;
+            if ($spot) {
+                $ev_sum += $ev;
+                $cost_sum += $price;
+            } else {
+                $ev_sum += $ev * $qty;
+                $cost_sum += $price * $qty;
+            }
             $iv_sum += $iv;
             $qty_sum += $qty;
-            $price_sum += $price;
-            $charge_sum += $ev;
             $count++;
             if (substr($key, 0, 10) < $start) {
                 $start_ndx = $ndx + 1;
@@ -374,13 +373,17 @@ class Meter extends Page
             $stop_ndx = $last_qty_ndx + 1;
             $start_ndx = $stop_ndx - $len;
         }
-        if ($cost_sum || $qty_sum || $price_sum) {
-            $cost_data[] = $cost_sum;
-            $ev_data[] = $ev_sum;
-            $iv_data[] = $iv_sum;
+        if ($cost_sum || $qty_sum) {
+            if ($spot) {
+                $ev_data[] = $ev_sum / $count;
+                $iv_data[] = $iv_sum / $count;
+                $cost_data[] = $cost_sum / $count;
+            } else {
+                $ev_data[] = $ev_sum;
+                $iv_data[] = $iv_sum;
+                $cost_data[] = $cost_sum;
+            }
             $qty_data[] = $qty_sum;
-            $price_data[] = $price_sum / $count;
-            $charge_data[] = $charge_sum / $count;
         }
 
         $node->Script()->src('chart.js');
@@ -392,12 +395,10 @@ class Meter extends Page
         $tables = array(
             &$labels,
             &$keys,
-            &$cost_data,
             &$ev_data,
             &$iv_data,
             &$qty_data,
-            &$price_data,
-            &$charge_data
+            &$cost_data,
         );
         if (!$spot && $last_qty_ndx + 1 < count($labels)) {
             foreach ($tables as &$table) {
@@ -427,12 +428,10 @@ class Meter extends Page
 	$node->Script("
 	    var labels = ".json_encode($labels).";
 	    var keys = ".json_encode($keys).";
-	    var cost_data = ".json_encode($cost_data).";
 	    var ev_data = ".json_encode($ev_data).";
 	    var iv_data = ".json_encode($iv_data).";
 	    var qty_data = ".json_encode($qty_data).";
-	    var price_data = ".json_encode($price_data).";
-	    var charge_data = ".json_encode($charge_data).";
+	    var cost_data = ".json_encode($cost_data).";
             var vat_data = [];
 	    var click_in = '".$click_in."';
 	    var click_out = '".$click_out."';
@@ -454,12 +453,7 @@ class Meter extends Page
             }
 
             if (!meter) {
-                var tables;
-                if (spot) {
-                    tables = [price_data, charge_data]
-                } else {
-                    tables = [cost_data, iv_data, ev_data]
-                }
+                var tables = [cost_data, iv_data, ev_data]
                 var vat_data = Array(labels.length).fill(0);
                 for (let i = 0; i < tables.length; i++) {
                     for (let j = 0; j < tables[i].length; j++) {
@@ -512,11 +506,53 @@ class Meter extends Page
                 }]
 	    };
 
-            if (Sum(ev_data) == 0) {
+            if (spot) {
+                var label1;
+                var label2;
+                if (click_in) {
+                    label1 = 'Gennemsnitspris [kr/kWh]';
+		    label2 = 'Gennemsnitsafgift pr. time [kr]';
+		    label3 = 'Gennemsnitsafgift pr. kWh [kr]';
+                } else {
+                    label1 = 'Spotpris [kr/kWh]';
+                    label2 = 'Afgift pr. time [kr/kWh]';
+		    label3 = 'Afgift pr. kWh [kr]';
+                }
+                data.datasets = [{
+		    label: label1,
+                    id: 'Energi',
+		    backgroundColor: spot_color,
+		    borderColor: 'rgb(255, 99, 132)',
+		    data: cost_data
+                },
+                {
+		    label: label2,
+                    id: 'Energi',
+		    backgroundColor: iv_color,
+		    borderColor: 'rgb(255, 99, 132)',
+		    data: iv_data
+                },
+                {
+		    label: label3,
+                    id: 'Energi',
+		    backgroundColor: ev_color,
+		    borderColor: 'rgb(255, 99, 132)',
+		    data: ev_data
+                },
+                {
+		    label: 'Moms [kr/kWh]',
+                    id: 'Beløb',
+		    backgroundColor: vat_color,
+		    borderColor: 'rgb(255, 99, 132)',
+		    data: vat_data
+		}]
+            }
+
+            if (Sum(data.datasets[2].data) == 0) {
                 data.datasets.splice(2, 1);
             }
 
-            if (Sum(iv_data) == 0) {
+            if (Sum(data.datasets[1].data) == 0) {
                 data.datasets.splice(1, 1);
             }
 
@@ -528,39 +564,6 @@ class Meter extends Page
 		    borderColor: 'rgb(255, 99, 132)',
 		    data: qty_data
                 }];
-            }
-
-            if (spot) {
-                var label1;
-                var label2;
-                if (click_in) {
-                    label1 = 'Gennemsnitspris [kr/kWh]';
-                    label2 = 'Gennemsnitsafgift [kr/kWh]';
-                } else {
-                    label1 = 'Spotpris [kr/kWh]';
-                    label2 = 'Afgift [kr/kWh]';
-                }
-                data.datasets = [{
-		    label: label1,
-                    id: 'Energi',
-		    backgroundColor: spot_color,
-		    borderColor: 'rgb(255, 99, 132)',
-		    data: price_data
-                },
-                {
-		    label: label2,
-                    id: 'Energi',
-		    backgroundColor: ev_color,
-		    borderColor: 'rgb(255, 99, 132)',
-		    data: charge_data
-                },
-                {
-		    label: 'Moms [kr/kWh]',
-                    id: 'Beløb',
-		    backgroundColor: vat_color,
-		    borderColor: 'rgb(255, 99, 132)',
-		    data: vat_data
-		}]
             }
 
 	    var config = {

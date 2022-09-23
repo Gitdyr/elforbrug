@@ -14,7 +14,7 @@ class Fields extends Page
     public function Contents($body, $title = '')
     {
         $div = parent::Contents($body, 'Målepunkter');
-        if (empty($this->token)) {
+        if (!$this->Cookie('token')) {
             return;
         }
         $url = 'https://api.eloverblik.dk/customerapi/api';

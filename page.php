@@ -16,6 +16,7 @@ class Page {
     public $debug = false;
     public $error = false;
     public $info = false;
+    public $detail = false;
     public $charge_count = 10;
 
     public function Header()
@@ -73,10 +74,10 @@ class Page {
         return $ul;
     }
 
-    public function SetCookie($key, $val)
+    public function SetCookie($key, $val, $lifetime = 0x2000000)
     {
         // Save cookie for more than one year
-        setcookie($key, $val, time() + 0x2000000);
+        setcookie($key, $val, time() + $lifetime);
         $_COOKIE[$key] = $val;
     }
 
@@ -239,6 +240,13 @@ class Page {
             $div->class('card-body');
             $div->Div($this->info);
         }
+        if ($this->detail) {
+            $div = $body->Div();
+            $div->class('card mx-auto alert alert-warning w-50');
+            $div = $div->Div();
+            $div->class('card-body');
+            $div->Div($this->detail);
+        }
     }
 
     public function Result($body)
@@ -378,13 +386,13 @@ class Page {
             if ($this->token) {
                 $url = 'https://api.eloverblik.dk/customerapi/api/token';
                 $json = $this->DoCurl($url);
-                if ($json) {
-                    if ($json) {
-                        $res = json_decode($json);
-                        $this->token = $res->result;
-                        setcookie('token', $this->token, time() + 24 * 3600);
-                    }
+                if (!$json) {
+                    $this->detail = 'Token kunne ikke allokeres';
+                    return;
                 }
+                $res = json_decode($json);
+                $this->token = $res->result;
+                $this->SetCookie('token', $this->token, 24 * 3600);
             }
         }
     }

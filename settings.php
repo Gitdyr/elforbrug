@@ -16,6 +16,7 @@ class Settings extends Page
 {
     public function HandlePost()
     {
+        $old_refresh_token = $this->Cookie('refresh_token');
         parent::HandlePost();
         if ($_POST) {
             $_SESSION['costs'] = array();
@@ -69,35 +70,45 @@ class Settings extends Page
                     $this->SetCookie($c.'charge_'.$i, $v);
                 }
             }
-            $url = 'https://api.eloverblik.dk/customerapi/api/token';
-            $val = $this->Cookie('refresh_token');
-            if ($val) {
-                $this->token = $val;
-                $json = $this->DoCurl($url);
-                if ($json) {
-                    $this->info = 'Indstillinger opdateret';
-                    $res = json_decode($json);
-                    $this->SetCookie('token', $res->result);
-                    $this->token = $res->result;
-                    $url = 'https://api.eloverblik.dk/customerapi/api';
-                    $url .= '/meteringpoints/meteringpoints';
-                    $json = $this->DoCurl($url);
-                    $response = json_decode($json);
-                    $result = reset($response->result);
-                    $id = $result->meteringPointId;
-                    $type = $result->typeOfMP;
-                    $this->SetCookie('meteringPointId', $id);
-                    $this->SetCookie('typeOfMP', $type);
-                    $metering_points[] =
-                        $result->meteringPointId.':'.$result->typeOfMP;
-                    foreach ($result->childMeteringPoints as $point) {
-                        $metering_points[] =
-                            $point->meteringPointId.':'.$point->typeOfMP;
-                    }
-                    $data = implode(',', $metering_points);
-                    $this->SetCookie('meteringPoints', $data);
-                }
+            $refresh_token = $this->Cookie('refresh_token');
+            if (!$refresh_token) {
+                $this->SetCookie('token', '');
+                return;
             }
+            if ($refresh_token != $old_refresh_token) {
+                $this->token = $refresh_token;
+                $url = 'https://api.eloverblik.dk/customerapi/api/token';
+                $json = $this->DoCurl($url);
+                if (!$json) {
+                    $this->detail = 'Token kunne ikke allokeres';
+                    return;
+                }
+                $res = json_decode($json);
+                $this->SetCookie('token', $res->result, 24 *3600);
+                $this->token = $res->result;
+            }
+            $this->info = 'Indstillinger opdateret';
+            $url = 'https://api.eloverblik.dk/customerapi/api';
+            $url .= '/meteringpoints/meteringpoints';
+            $json = $this->DoCurl($url);
+            if (!$json) {
+                $this->detail = 'Målepunkter kunne ikke hentes';
+                return;
+            }
+            $response = json_decode($json);
+            $result = reset($response->result);
+            $id = $result->meteringPointId;
+            $type = $result->typeOfMP;
+            $this->SetCookie('meteringPointId', $id);
+            $this->SetCookie('typeOfMP', $type);
+            $metering_points[] =
+                $result->meteringPointId.':'.$result->typeOfMP;
+            foreach ($result->childMeteringPoints as $point) {
+                $metering_points[] =
+                    $point->meteringPointId.':'.$point->typeOfMP;
+            }
+            $data = implode(',', $metering_points);
+            $this->SetCookie('meteringPoints', $data);
         }
     }
 

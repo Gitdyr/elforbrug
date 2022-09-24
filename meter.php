@@ -45,7 +45,6 @@ class Meter extends Page
             </script>\n";
             unset($this->progress_color);
         }
-        /*
         print "
         <script>
             var bar = document.getElementsByClassName('progress-bar');
@@ -55,7 +54,6 @@ class Meter extends Page
         for ($j = 0; $j < 128; $j++) {
             print "<!---------------------------->\n";
         }
-        */
         flush();
         ob_flush();
         return strlen($str);

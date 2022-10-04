@@ -264,7 +264,7 @@ class Meter extends Page
             $button->oncontextmenu('GraphNextContext(event)');
             $button->onclick('GraphNext(event)');
         }
-        $id = $this->Cookie('meteringPointId');
+        $id = $this->Cookie('meteringPointId', 'prices');
         $ids = explode(',', $this->Cookie('meteringPoints'));
         $div = parent::Contents($node, $description.' pr. '.$interval);
         $div->class('btn');
@@ -284,9 +284,22 @@ class Meter extends Page
             $_SESSION['timeout'] < time())
         {
             $this->Progress($node);
-            $sstart = '2020-10-01';
+            if (empty($_SESSION['last_qty_date'])) {
+                $sstart = '2020-10-01';
+            } else {
+                $sstart = $_SESSION['last_qty_date'];
+            }
             $sstop = date('Y-m-d', time() + 2 * 24 * 3600);
-            $_SESSION['costs'][$id] = $this->Costs($sstart, $sstop);
+            // $this->Dump(array($sstart, $sstop));
+            $costs = $this->Costs($sstart, $sstop);
+            $last_qty_date = $sstart;
+            foreach ($costs as $cost) {
+                $date = substr($cost[0], 0, 10);
+                $_SESSION['costs'][$id][$date][] = $cost;
+                if ($cost[1]) {
+                    $last_qty_date = $date;
+                }
+            }
             $time = time();
             if (date('H', $time) < 13) {
                 $date = date('Y-m-d 13:00:00', $time);
@@ -294,8 +307,14 @@ class Meter extends Page
                 $date = date('Y-m-d 00:00:00', $time + 24 * 3600);
             }
             $_SESSION['timeout'] = strtotime($date);
+            $_SESSION['last_qty_date'] = $last_qty_date;
         }
-        $costs = $_SESSION['costs'][$id];
+        $costs = array();
+        foreach ($_SESSION['costs'][$id] as $cost_data) {
+            foreach ($cost_data as $cost) {
+                $costs[] = $cost;
+            }
+        }
         $ev_data = array();
         $iv_data = array();
         $qty_data = array();

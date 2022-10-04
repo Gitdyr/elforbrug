@@ -15,3 +15,11 @@ div.card, header {
     margin-bottom: 20px;
     text-align: center;
 }
+
+.btn img {
+    filter: invert(1);
+}
+
+.flip img {
+    transform: scaleX(-1);
+}

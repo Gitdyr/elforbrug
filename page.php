@@ -52,6 +52,7 @@ class Page {
         $link->rel('stylesheet');
         $link->href('style.css');
         $head->Script()->src($bpath.'/js/bootstrap.min.js');
+        $head->Script()->src('chart.js');
     }
 
     public function Item($ul, $name, $href = null)

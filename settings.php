@@ -80,12 +80,10 @@ class Settings extends Page
             }
             $refresh_token = $this->Cookie('refresh_token');
             if (!$refresh_token) {
-                $_SESSION['costs'] = array();
                 $this->SetCookie('token', '');
                 return;
             }
             if ($refresh_token != $old_refresh_token) {
-                $_SESSION['costs'] = array();
                 $this->token = $refresh_token;
                 $url = 'https://api.eloverblik.dk/customerapi/api/token';
                 $json = $this->DoCurl($url);

@@ -84,7 +84,7 @@ class Settings extends Page {
             let refresh_token = this.GetStorage('refresh_token');
             if (refresh_token != old_refresh_token) {
                 this.SetStorage('token', '');
-                this.SetStorage('token_life', Date.now());
+                this.SetStorage('token_life', '');
                 this.SetStorage('metering_point_id', '');
                 this.SetStorage('metering_points', '');
                 // This will force RefreshToken to run

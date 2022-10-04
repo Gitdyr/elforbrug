@@ -295,57 +295,31 @@ class Meter extends Page {
     }
 
     QtyProgress(e, obj, req) {
-        let progress = document.getElementsByClassName('progress qty'); 
-        if (progress.length) {
-            let m = req.response.match(/"end":"[^"]*"/g);
-            if (m && m.length) {
-                m = m.at(-1).slice(7, 17);
-                let date = new Date(m);
-                if (obj.progress_len > 0) {
-                    let width = (date.getTime() - obj.progress_start);
-                    width = width * 100 / obj.progress_len;
-                    console.log('qty width=' + width);
-                    let divs = document.getElementsByClassName('progress-bar'); 
-                    divs[0].style = 'width: ' + width + '%';
-                }
-            }
-        } else {
-            let form = document.forms[0];
-            if (form) {
-                let div = form.appendChild(document.createElement('div'));
-                div.className = 'progress qty mx-5';
-                div = div.appendChild(document.createElement('div'));
-                div.className = 'progress-bar bg-warning';
-                div.setAttribute('role', 'progressbar');
-                div.style = 'width: 0%';
+        let divs = document.getElementsByClassName('progress-bar qty'); 
+        let m = req.response.match(/"end":"[^"]*"/g);
+        if (m && m.length && divs.length) {
+            m = m.at(-1).slice(7, 17);
+            let date = new Date(m);
+            if (obj.qty_plen > 0) {
+                let width = (date.getTime() - obj.qty_pstart);
+                width = width * 100 / obj.qty_plen;
+                console.log('qty width=' + width);
+                divs[0].style = 'width: ' + width + '%';
             }
         }
     }
 
     PriceProgress(e, obj, req) {
-        let progress = document.getElementsByClassName('progress price'); 
-        if (progress.length) {
-            let m = req.response.match(/"HourDK":"[^"]*"/g);
-            if (m && m.length) {
-                m = m.at(-1).slice(10, 20);
-                let date = new Date(m);
-                if (obj.progress_len > 0) {
-                    let width = (date.getTime() - obj.progress_start);
-                    width = width * 100 / obj.progress_len;
-                    console.log('price width=' + width);
-                    let divs = document.getElementsByClassName('progress-bar'); 
-                    divs[0].style = 'width: ' + width + '%';
-                }
-            }
-        } else {
-            let form = document.forms[0];
-            if (form) {
-                let div = form.appendChild(document.createElement('div'));
-                div.className = 'progress price mx-5';
-                div = div.appendChild(document.createElement('div'));
-                div.className = 'progress-bar bg-danger';
-                div.setAttribute('role', 'progressbar');
-                div.style = 'width: 0%';
+        let divs = document.getElementsByClassName('progress-bar price'); 
+        let m = req.response.match(/"HourDK":"[^"]*"/g);
+        if (m && m.length && divs.length) {
+            m = m.at(-1).slice(10, 20);
+            let date = new Date(m);
+            if (obj.price_plen > 0) {
+                let width = (date.getTime() - obj.price_pstart);
+                width = width * 100 / obj.price_plen;
+                console.log('price width=' + width);
+                divs[0].style = 'width: ' + width + '%';
             }
         }
     }
@@ -441,6 +415,7 @@ class Meter extends Page {
     GetPrices(contact_server) {
         let time = this.GetLocalTime(Date.now());
         let price_area = this.GetStorage('price_area');
+        console.log('price_area=' + price_area + ' contact_server=' + contact_server);
         if (!price_area) {
             this.error = 'Prisområde er ikke konfigureret';
             return null;
@@ -467,11 +442,6 @@ class Meter extends Page {
         stop = stop.slice(0, 10);
         if (contact_server) {
             console.log('Get prices start=' + start + ' stop=' + stop);
-            let token = this.GetStorage('token');
-            if (!token) {
-                console.log('No token');
-                return null;
-            }
             let data = {
                 action: 'prices',
                 area: price_area,
@@ -479,9 +449,16 @@ class Meter extends Page {
                 stop: stop
             };
             let date = new Date(start);
-            this.progress_start = date.getTime();
+            this.price_pstart = date.getTime();
             date = new Date(stop);
-            this.progress_len = date.getTime() - this.progress_start;
+            this.price_plen = date.getTime() - this.price_pstart;
+            let form = document.forms[0];
+            let div = form.appendChild(document.createElement('div'));
+            div.className = 'progress mx-5';
+            div = div.appendChild(document.createElement('div'));
+            div.className = 'progress-bar price bg-danger';
+            div.setAttribute('role', 'progressbar');
+            div.style = 'width: 0%';
             this.DoAjax(data, this.PriceCallback, this.PriceProgress);
         }
         return null;
@@ -527,9 +504,16 @@ class Meter extends Page {
                 stop: stop
             };
             let date = new Date(start);
-            this.progress_start = date.getTime();
+            this.qty_pstart = date.getTime();
             date = new Date(stop);
-            this.progress_len = date.getTime() - this.progress_start;
+            this.qty_plen = date.getTime() - this.qty_pstart;
+            let form = document.forms[0];
+            let div = form.appendChild(document.createElement('div'));
+            div.className = 'progress mx-5';
+            div = div.appendChild(document.createElement('div'));
+            div.className = 'progress-bar qty bg-warning';
+            div.setAttribute('role', 'progressbar');
+            div.style = 'width: 0%';
             this.DoAjax(data, this.QuantityCallback, this.QtyProgress);
         }
         return null;
@@ -645,6 +629,9 @@ class Meter extends Page {
             card.firstChild.innerText = description + ' pr. ' + interval;
         }
         this.ClickInClickOut(prefix, page);
+        if (qtys == null) {
+            return;
+        }
         if (prices == null) {
             return;
         }
@@ -1009,6 +996,7 @@ class Meter extends Page {
             this.SetStorage('prices', {});
             this.SaveStorage();
         }
+        console.log('HandlePost');
         if (this.error == false) {
             if (prefix == 'c') {
                 this.GetQtys(true);

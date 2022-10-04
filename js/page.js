@@ -53,7 +53,6 @@ class Page {
     }
 
     Header() {
-        let bpath = 'bootstrap';
         let head = this.html.Head();
         let meta = head.Meta();
         meta.name('viewport');
@@ -63,14 +62,15 @@ class Page {
         head.Title('Elforbrug');
         let link = head.Link();
         link.rel('stylesheet');
-        link.href(bpath + '/css/bootstrap.min.css');
+        link.href('bootstrap/css/bootstrap.min.css');
         link = head.Link();
         link.rel('stylesheet');
         link.href('style.css');
-        head.Script().src(bpath + '/js/bootstrap.min.js');
-        head.Script().src('js/chart.js');
-        head.Script().src('js/htmlnode.js');
-        head.Script().src('js/page.js');
+        let script;
+        script = head.Script().src('bootstrap/js/bootstrap.min.js');
+        script = head.Script().src('js/chart.js');
+        script = head.Script().src('js/htmlnode.js');
+        script = head.Script().src('js/page.js');
     }
 
     Item(ul, name, href = null, page = null) {
@@ -401,6 +401,11 @@ class Page {
         e.preventDefault();
         history.replaceState({}, null, e.target.href);
         let page = this.GetPage();
+        obj.post = new Map();
+        obj.error = false;
+        obj.info = false;
+        obj.saved_info = false;
+        obj.detail = false;
         window[page].Display();
     }
 
@@ -499,8 +504,8 @@ class Page {
         if (refresh_token && !token && token_life) {
             this.detail = 'Token kunne ikke allokeres';
         }
-        console.log('Must refresh ' + token_life + ' ' + Date.now());
         if (refresh_token) {
+            console.log('Must refresh ' + token_life + ' ' + Date.now());
             let data = {
                 action: 'token',
                 token: refresh_token

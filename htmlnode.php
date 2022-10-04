@@ -53,7 +53,7 @@ class HtmlNode {
         } else {
             // New attribute
             $this->attributes[$name][] = $val;
-            return null;
+            return $this;
         }
     }
 

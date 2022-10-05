@@ -22,7 +22,8 @@ class Index extends Page {
             Du kan downloade og installere koden fra GitHub:
             <a href='${url}'>${url}</a>.`);
         url = 'https://eloverblik.dk/';
-        let button = div.Button('🞃');
+        let button = div.Button();
+        button.Image().src('img/caret-down-fill.svg');
         button.type('button');
         button.class('btn btn-secondary float-end');
         button['data-bs-toggle']('collapse');

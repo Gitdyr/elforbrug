@@ -5,7 +5,7 @@ aktuelle spotpriser. Ved at angive prisen pr. kWh for
 lavlast/højlast/spidslast i kombination med historiske spotpriser, er
 det muligt at udføre de udregninger, der ligger til grund for elregningen.
 
-Refresh token, diverse indstillinger og midlertidig data gemmes lokalt i browseren.
+Refresh token, diverse indstillinger og midlertidig data, gemmes lokalt i browseren.
 
 ## Refresh token
 For at kunne hente målerdata, skal du logge ind hos https://eloverblik.dk/. Klik på ikonet i øverste højre hjørne og vælg "Datadeling".

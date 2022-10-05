@@ -105,12 +105,6 @@ class Index
         print $str;
         flush();
         ob_flush();
-        /*
-        $fp = fopen("kbe.txt", "a");
-        $this->file_len += strlen($str);
-        fprintf($fp, "%s", $str);
-        fclose($fp);
-        */
         return strlen($str);
     }
 
@@ -132,16 +126,7 @@ class Index
         );
         // $this->Dump($data);
         $progress = array($this, 'ProgressBar');
-        $this->file_len = 0;
-        $res = $this->DoCurl($url, $data, 'GET', $progress);
-        /*
-        for ($j = 0; $j < 128; $j++) {
-            print "<!---------------------------->\n";
-        }
-        */
-        print "\n";
-        flush();
-        ob_flush();
+        $this->DoCurl($url, $data, 'GET', $progress);
     }
 
     public function Quantity($start, $stop, $id)

@@ -38,16 +38,18 @@ class Meter extends Page {
                         return '';
                     }
                     let sum = 0;
-                    let val = 0;
-                    tooltipItem.forEach(function(tooltipItem) {
-                        sum += tooltipItem.parsed.y;
-                    });
+                    for (const item of tooltipItem) {
+                        if (item.dataset.id != 'Mean') {
+                            sum += item.parsed.y;
+                        }
+                    }
                     return 'I alt: ' + sum.toFixed(2).replace('.', ',');
                 }
             }
         },
         legend: {
             onClick: (e, li, l) => {
+                console.log(e);
                 const i = li.datasetIndex;
                 e.chart.data.datasets[i].hidden =
                     !e.chart.data.datasets[i].hidden;
@@ -306,6 +308,7 @@ class Meter extends Page {
                     width = width * 100 / obj.qty_plen;
                     console.log('qty width=' + width);
                     divs[0].style = 'width: ' + width + '%';
+                    divs[0].innerHTML = obj.GetLocalTime(date).slice(0, 10);
                 }
             }
         } else {
@@ -331,6 +334,7 @@ class Meter extends Page {
                     width = width * 100 / obj.price_plen;
                     console.log('price width=' + width);
                     divs[0].style = 'width: ' + width + '%';
+                    divs[0].innerHTML = obj.GetLocalTime(date).slice(0, 10);
                 }
             }
         } else {
@@ -347,10 +351,15 @@ class Meter extends Page {
     QuantityCallback(data, obj) {
         if (data.error) {
             obj.error = data.error;
+            console.log(data.info);
             obj.Display();
             return;
         }
         // console.log(data);
+        if (!data.result) {
+            console.log(data);
+            return;
+        }
         let result = data.result[0].MyEnergyData_MarketDocument;
         let metering_point_id = obj.GetStorage('metering_point_id');
         let qtys = obj.GetStorage('qtys', {});
@@ -366,7 +375,9 @@ class Meter extends Page {
             if (!qtys[metering_point_id][ldate]) {
                 qtys[metering_point_id][ldate] = [];
             }
+            // console.log(timeInterval);
             for (const record of period.Point) {
+                // console.log(record);
                 let qty = record['out_Quantity.quantity'];
                 let time = obj.GetLocalTime(date);
                 if (qtys[metering_point_id][ldate][ndx]) {
@@ -379,8 +390,15 @@ class Meter extends Page {
             }
         }
         obj.SetStorage('qtys', qtys);
+        let offset;
+        if (obj.qty_final) {
+            offset = 24;
+        } else {
+            offset = 0;
+            setTimeout(() => obj.GetQtys(true), 2000);
+        }
         obj.SetStorage('next_qty_update_' + metering_point_id,
-            obj.GetLocalTime(Date.now() + 24 * 3600 * 1000).slice(0, 10));
+            obj.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
         obj.SaveStorage();
         obj.ShowMeter();
         let progress = document.getElementsByClassName('progress qty'); 
@@ -441,7 +459,7 @@ class Meter extends Page {
             return null;
         }
         let prices = this.GetStorage('prices', {});
-        let start = '2021-01-01';
+        let start = '2019-01-01';
         start = this.GetLastDate(prices, start);
         let stop;
         let next_price_update = this.GetStorage('next_price_update');
@@ -460,6 +478,8 @@ class Meter extends Page {
         // stop = this.GetLocalTime(Date.now() + (24 + 11) * 3600 * 1000);
         stop = this.GetLocalTime(Date.now() + 48 * 3600 * 1000);
         stop = stop.slice(0, 10);
+        start = this.Get('first', start);
+        stop = this.Get('last', stop);
         if (contact_server) {
             console.log('Get prices start=' + start + ' stop=' + stop);
             let data = {
@@ -488,7 +508,7 @@ class Meter extends Page {
             qtys[metering_point_id] = {};
         }
         qtys = qtys[metering_point_id];
-        let start = '2021-01-01';
+        let start = '2019-01-01';
         start = this.GetLastDate(qtys, start);
         let stop;
         let next_qty_update =
@@ -497,11 +517,22 @@ class Meter extends Page {
             console.log('next_qty_update=' + next_qty_update);
         }
         let now = this.GetLocalTime(Date.now());
-        if (Object.keys(qtys).length && now <= next_qty_update) {
+        let first = this.Get('first');
+        if (Object.keys(qtys).length && now <= next_qty_update && !first) {
             // All data cached
             return qtys;
         }
         stop = this.GetLocalTime(Date.now()).slice(0, 10);
+        start = this.Get('first', start);
+        stop = this.Get('last', stop);
+        let start_date = new Date(start);
+        let stop_date = new Date(stop);
+        if (stop_date - start_date > 365 * 24 * 3600 * 1000) {
+            start_date.setFullYear(1 + start_date.getFullYear());
+            stop = this.GetLocalTime(start_date).slice(0, 10);
+        } else {
+            this.qty_final = true;
+        }
         if (contact_server) {
             console.log('Get quantities start=' + start + ' stop=' + stop);
             let token = this.GetStorage('token');
@@ -590,7 +621,6 @@ class Meter extends Page {
             '07-01 00:00:00',
             '10-01 00:00:00'
         ];
-        this.chart.clear();
         [prefix, page] = page.split('_');
         this.page = page;
         let interval;
@@ -649,7 +679,9 @@ class Meter extends Page {
                 let [ev, iv, jv] = this.GetCharges(time, metering_point_id);
                 let qty = 0;
                 if (qtys[date]) {
-                    qty = qtys[date][ndx++][1];
+                    if (qtys[date][ndx]) {
+                        qty = qtys[date][ndx++][1];
+                    }
                 }
                 if (!key) {
                     key = time;
@@ -972,8 +1004,7 @@ class Meter extends Page {
 
     GraphParent() {
         if (this.click_out) {
-            let params = new URLSearchParams(location.search);
-            let start = params.get('start');
+            let start = this.Get('start');
             let url = this.click_out;
             if (start) {
                 url += '&start=' + start;
@@ -993,17 +1024,12 @@ class Meter extends Page {
 
     HandlePost() {
         super.HandlePost();
-        let params = new URLSearchParams(location.search);
-        let page = params.get('page');
-        let force = params.get('force');
-        let prefix;
-        [prefix, page] = page.split('_');
-        if (force) {
+        let prefix = this.GetPrefix();
+        if (this.Get('force')) {
             this.SetStorage('qtys', {});
             this.SetStorage('prices', {});
             this.SaveStorage();
         }
-        console.log('HandlePost');
         if (this.error == false) {
             if (prefix == 'c') {
                 this.GetQtys(true);

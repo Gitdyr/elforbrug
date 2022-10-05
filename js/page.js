@@ -39,9 +39,7 @@ class Page {
     }
 
     GetPage() {
-        let params = new URLSearchParams(location.search);
-        let prefix;
-        let page = params.get('page');
+        let page = this.Get('page');
         if (page) {
             if (page.split('_').length > 1) {
                 page = 'meter';
@@ -50,6 +48,14 @@ class Page {
             page = 'index';
         }
         return page;
+    }
+
+    GetPrefix() {
+        let val = this.Get('page').split('_');
+        if (val.length > 1) {
+            return val[0];
+        }
+        return '';
     }
 
     Header() {
@@ -93,8 +99,7 @@ class Page {
             a.class('nav-link');
         }
         a.href(href);
-        let parms = new URLSearchParams(location.search);
-        if (page == parms.get('page')) {
+        if (this.Get('page') == page) {
             a.class('active');
         }
         return li;
@@ -468,7 +473,12 @@ class Page {
             let response;
             if (this.responseText) {
                 console.log('len=' + this.responseText.length);
-                response = JSON.parse(this.responseText);
+                try {
+                    response = JSON.parse(this.responseText);
+                }
+                catch (err) {
+                    response = this.responseText;
+                }
             } else {
                 response = '';
                 console.log(this);

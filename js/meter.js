@@ -296,31 +296,51 @@ class Meter extends Page {
 
     QtyProgress(e, obj, req) {
         let divs = document.getElementsByClassName('progress-bar qty'); 
-        let m = req.response.match(/"end":"[^"]*"/g);
-        if (m && m.length && divs.length) {
-            m = m.at(-1).slice(7, 17);
-            let date = new Date(m);
-            if (obj.qty_plen > 0) {
-                let width = (date.getTime() - obj.qty_pstart);
-                width = width * 100 / obj.qty_plen;
-                console.log('qty width=' + width);
-                divs[0].style = 'width: ' + width + '%';
+        if (divs.length) {
+            let m = req.response.match(/"end":"[^"]*"/g);
+            if (m && m.length) {
+                m = m.at(-1).slice(7, 17);
+                let date = new Date(m);
+                if (obj.qty_plen > 0) {
+                    let width = (date.getTime() - obj.qty_pstart);
+                    width = width * 100 / obj.qty_plen;
+                    console.log('qty width=' + width);
+                    divs[0].style = 'width: ' + width + '%';
+                }
             }
+        } else {
+            let form = document.forms[0];
+            let div = form.appendChild(document.createElement('div'));
+            div.className = 'progress qty mx-5';
+            div = div.appendChild(document.createElement('div'));
+            div.className = 'progress-bar qty bg-warning';
+            div.setAttribute('role', 'progressbar');
+            div.style = 'width: 0%';
         }
     }
 
     PriceProgress(e, obj, req) {
         let divs = document.getElementsByClassName('progress-bar price'); 
-        let m = req.response.match(/"HourDK":"[^"]*"/g);
-        if (m && m.length && divs.length) {
-            m = m.at(-1).slice(10, 20);
-            let date = new Date(m);
-            if (obj.price_plen > 0) {
-                let width = (date.getTime() - obj.price_pstart);
-                width = width * 100 / obj.price_plen;
-                console.log('price width=' + width);
-                divs[0].style = 'width: ' + width + '%';
+        if (divs.length) {
+            let m = req.response.match(/"HourDK":"[^"]*"/g);
+            if (m && m.length) {
+                m = m.at(-1).slice(10, 20);
+                let date = new Date(m);
+                if (obj.price_plen > 0) {
+                    let width = (date.getTime() - obj.price_pstart);
+                    width = width * 100 / obj.price_plen;
+                    console.log('price width=' + width);
+                    divs[0].style = 'width: ' + width + '%';
+                }
             }
+        } else {
+            let form = document.forms[0];
+            let div = form.appendChild(document.createElement('div'));
+            div.className = 'progress price mx-5';
+            div = div.appendChild(document.createElement('div'));
+            div.className = 'progress-bar price bg-danger';
+            div.setAttribute('role', 'progressbar');
+            div.style = 'width: 0%';
         }
     }
 
@@ -452,13 +472,6 @@ class Meter extends Page {
             this.price_pstart = date.getTime();
             date = new Date(stop);
             this.price_plen = date.getTime() - this.price_pstart;
-            let form = document.forms[0];
-            let div = form.appendChild(document.createElement('div'));
-            div.className = 'progress mx-5';
-            div = div.appendChild(document.createElement('div'));
-            div.className = 'progress-bar price bg-danger';
-            div.setAttribute('role', 'progressbar');
-            div.style = 'width: 0%';
             this.DoAjax(data, this.PriceCallback, this.PriceProgress);
         }
         return null;
@@ -507,13 +520,6 @@ class Meter extends Page {
             this.qty_pstart = date.getTime();
             date = new Date(stop);
             this.qty_plen = date.getTime() - this.qty_pstart;
-            let form = document.forms[0];
-            let div = form.appendChild(document.createElement('div'));
-            div.className = 'progress mx-5';
-            div = div.appendChild(document.createElement('div'));
-            div.className = 'progress-bar qty bg-warning';
-            div.setAttribute('role', 'progressbar');
-            div.style = 'width: 0%';
             this.DoAjax(data, this.QuantityCallback, this.QtyProgress);
         }
         return null;
@@ -584,6 +590,7 @@ class Meter extends Page {
             '07-01 00:00:00',
             '10-01 00:00:00'
         ];
+        this.chart.clear();
         [prefix, page] = page.split('_');
         this.page = page;
         let interval;

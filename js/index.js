@@ -15,8 +15,8 @@ class Index extends Page {
             Dette gøres ved at udtrække spotpriser fra energidataservice.dk
             og forbrug (pr. time) fra eloverblik.dk.`);
         div.P(`
-            De felter, der udfyldes under "indstillinger" gemmes
-            i cookies lokalt i din browser.`);
+            De felter, der udfyldes under "indstillinger", og midlertidige
+            data gemmes i lokalt i din browser.`);
         let url = 'https://github.com/Gitdyr/elforbrug';
         div.P(`
             Du kan downloade og installere koden fra GitHub:

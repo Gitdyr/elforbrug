@@ -94,6 +94,8 @@ class Settings extends Page {
             if (this.GetStorage('force')) {
                 this.SetStorage('qtys', {});
                 this.SetStorage('prices', {});
+                this.SetStorage('token', '');
+                this.SetStorage('token_life', '');
             }
             this.info = 'Indstillinger opdateret';
             this.SaveStorage();

@@ -262,7 +262,23 @@ class Page {
         if (text) {
             td.Div(text).class('form-text');
         }
-        return td;
+        return input;
+    }
+
+    CheckBox(div, name, text = null) {
+        div = div.Div();
+        div.class('form-check');
+        let checkbox = div.Input();
+        checkbox.type('checkbox');
+        checkbox.name(name);
+        checkbox.id(name);
+        checkbox.class('form-check-input');
+        if (text) {
+            let label = div.Label(text);
+            label.for(name);
+            label.class('form-check-label');
+        }
+        return checkbox;
     }
 
     SubmitButton(div) {

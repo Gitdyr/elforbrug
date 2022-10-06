@@ -11,7 +11,37 @@ class Settings extends Page {
         super.HandlePost();
         let metering_point_id = this.GetStorage('metering_point_id', '');
         if (this.post.size) {
-            // this.Dump(this.post);
+            if (this.GetStorage('force')) {
+                this.SetStorage('qtys', {});
+                this.SetStorage('prices', {});
+                this.SetStorage('token', '');
+                this.SetStorage('token_life', '');
+            }
+            if (this.GetStorage('default')) {
+                let lines = [
+                    [ '2022-01-01', '00:00', '1,31559', '0', '0' ],
+                    [ '2022-01-01', '17:00', '1,78039', '0', '0' ],
+                    [ '2022-01-01', '20:00', '1,31559', '0', '0' ],
+                    [ '2022-04-01', '00:00', '1,30009', '0', '0' ],
+                    [ '2022-07-01', '00:00', '1,75599', '0', '0' ],
+                    [ '2022-07-01', '17:00', '1,64039', '0', '0' ],
+                    [ '2022-07-01', '20:00', '1,75599', '0', '0' ],
+                    [ '2023-01-01', '00:00', '0,28333', '0', '0' ],
+                    [ '2023-01-01', '06:00', '0,60933', '0', '0' ],
+                    [ '2023-01-01', '17:00', '1,58717', '0', '0' ],
+                    [ '2023-01-01', '21:00', '0,60933', '0', '0' ],
+                ];
+                for (let i = 0; i < lines.length; i++) {
+                    let j = metering_point_id + '_' + i;
+                    let [d_, b_, e_, i_, j_] = lines[i];
+                    this.post.set('d_charge_' + j, d_);
+                    this.post.set('b_charge_' + j, b_);
+                    this.post.set('e_charge_' + j, e_);
+                    this.post.set('i_charge_' + j, i_);
+                    this.post.set('j_charge_' + j, j_);
+                }
+                this.charge_count = lines.length;
+            }
             let charges = {};
             let c_list = ['e_', 'i_', 'j_'];
             for (let [key, val] of this.post) {
@@ -36,16 +66,16 @@ class Settings extends Page {
                         return;
                     }
                     let k = key.replaceAll('d_', 'b_');
-                    let b_val = this.GetStorage(k);
+                    let b_val = this.post.get(k);
                     if (!b_val) {
                         b_val = '00:00';
                     }
                     let sort_key = val + ' ' + b_val;
                     for (let c of c_list) {
                         let k = key.replaceAll('d_', c);
-                        let v = this.GetStorage(k, '0');
+                        let v = this.post.get(k);
                         v = v.replaceAll(',', '.');
-                        v = eval(v);
+                        v = parseFloat(v).toString();
                         v = Math.round(v * 1000000) / 1000000;
                         v = v.toString().replaceAll('.', ',');
                         if (!charges[sort_key]) {
@@ -90,12 +120,6 @@ class Settings extends Page {
                 // This will force RefreshToken to run
                 // which will in turn call TokenCallback and
                 // PointsCallback
-            }
-            if (this.GetStorage('force')) {
-                this.SetStorage('qtys', {});
-                this.SetStorage('prices', {});
-                this.SetStorage('token', '');
-                this.SetStorage('token_life', '');
             }
             this.info = 'Indstillinger opdateret';
             this.SaveStorage();
@@ -222,17 +246,9 @@ class Settings extends Page {
                 Startdatoen angiver starten af perioden.
                 Perioden stopper, når næste startdato er den aktuelle`
             );
-            div = div.Div();
-            div.class('form-check');
-            let checkbox = div.Input();
-            checkbox.type('checkbox');
-            checkbox.name('force');
-            checkbox.id('force');
-            checkbox.class('form-check-input');
-            let label = div.Label('Nulstil midlertidige data');
-            label.for('force');
-            label.class('form-check-label');
+            this.CheckBox(div, 'default', 'Udfyld konfiguration automatisk');
         }
+        this.CheckBox(div, 'force', 'Nulstil midlertidige data');
         this.SubmitButton(div);
     }
 

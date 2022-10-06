@@ -33,7 +33,6 @@ class Points extends Page {
                     }
                     continue;
                 }
-                console.log(val);
                 if (val === null) {
                     val = '';
                 } else if (val === true) {

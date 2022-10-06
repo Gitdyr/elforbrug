@@ -49,7 +49,6 @@ class Meter extends Page {
         },
         legend: {
             onClick: (e, li, l) => {
-                console.log(e);
                 const i = li.datasetIndex;
                 e.chart.data.datasets[i].hidden =
                     !e.chart.data.datasets[i].hidden;
@@ -157,6 +156,9 @@ class Meter extends Page {
     }
 
     AddIvCharge(data) {
+        if (this.Sum(data) == 0) {
+            return;
+        }
         let dataset = {
             label: 'Afgift pr. døgn [kr]',
             id: 'IvCharge',
@@ -169,6 +171,9 @@ class Meter extends Page {
     }
 
     AddJvCharge(data) {
+        if (this.Sum(data) == 0) {
+            return;
+        }
         let dataset = {
             label: 'Afgift pr. måned [kr]',
             id: 'JvCharge',
@@ -181,6 +186,9 @@ class Meter extends Page {
     }
 
     AddEvCharge(data) {
+        if (this.Sum(data) == 0) {
+            return;
+        }
         let dataset = {
             label: 'Afgift pr. kWh [kr]',
             id: 'EvCharge',
@@ -590,6 +598,9 @@ class Meter extends Page {
                 }
             }
         }
+        ev = parseFloat(ev.toString().replace(',', '.'));
+        iv = parseFloat(iv.toString().replace(',', '.'));
+        jv = parseFloat(jv.toString().replace(',', '.'));
         let date = new Date(time);
         let date1;
         let date2;
@@ -601,9 +612,6 @@ class Meter extends Page {
         let hpm = (date2 - date1) / 1000 / 3600;
         iv = iv / hpd;
         jv = jv / hpm;
-        ev = parseFloat(ev.toString().replace(',', '.'));
-        iv = parseFloat(iv.toString().replace(',', '.'));
-        jv = parseFloat(jv.toString().replace(',', '.'));
         return [ev, iv, jv];
     }
     

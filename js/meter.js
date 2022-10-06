@@ -312,6 +312,7 @@ class Meter extends Page {
                 }
             }
         } else {
+            /*
             let form = document.forms[0];
             let div = form.appendChild(document.createElement('div'));
             div.className = 'progress qty mx-5';
@@ -319,6 +320,7 @@ class Meter extends Page {
             div.className = 'progress-bar qty bg-warning';
             div.setAttribute('role', 'progressbar');
             div.style = 'width: 0%';
+            */
         }
     }
 
@@ -338,6 +340,7 @@ class Meter extends Page {
                 }
             }
         } else {
+            /*
             let form = document.forms[0];
             let div = form.appendChild(document.createElement('div'));
             div.className = 'progress price mx-5';
@@ -345,6 +348,7 @@ class Meter extends Page {
             div.className = 'progress-bar price bg-danger';
             div.setAttribute('role', 'progressbar');
             div.style = 'width: 0%';
+            */
         }
     }
 
@@ -393,18 +397,31 @@ class Meter extends Page {
         let offset;
         if (obj.qty_final) {
             offset = 24;
+            delete obj.qty_pstart;
+            let progress = document.getElementsByClassName('progress qty'); 
+            if (progress.length) {
+                setTimeout(() => progress[0].remove(), 1000);
+            }
         } else {
             offset = 0;
             setTimeout(() => obj.GetQtys(true), 2000);
+            let progress = document.getElementsByClassName('progress qty'); 
+            if (progress.length) {
+                setTimeout(() => {
+                    let div = progress[0];
+                    div.firstChild.remove();
+                    div = div.appendChild(document.createElement('div'));
+                    div.className = 'progress-bar qty bg-warning';
+                    div.setAttribute('role', 'progressbar');
+                    div.style = 'width: 0%';
+                },
+                1000);
+            }
         }
         obj.SetStorage('next_qty_update_' + metering_point_id,
             obj.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
         obj.SaveStorage();
         obj.ShowMeter();
-        let progress = document.getElementsByClassName('progress qty'); 
-        if (progress.length) {
-            setTimeout(() => progress[0].remove(), 1000);
-        }
     }
 
     PriceCallback(data, obj) {
@@ -444,6 +461,7 @@ class Meter extends Page {
         obj.SetStorage('next_price_update', next_price_update);
         obj.SaveStorage();
         obj.ShowMeter();
+        delete obj.price_pstart;
         let progress = document.getElementsByClassName('progress price'); 
         if (progress.length) {
             setTimeout(() => progress[0].remove(), 1000);
@@ -666,6 +684,30 @@ class Meter extends Page {
             card.firstChild.innerText = description + ' pr. ' + interval;
         }
         this.ClickInClickOut(prefix, page);
+        if (this.price_pstart) {
+            let divs = document.getElementsByClassName('progress-bar price'); 
+            if (divs.length == 0) {
+                let form = document.forms[0];
+                let div = form.appendChild(document.createElement('div'));
+                div.className = 'progress price mx-5';
+                div = div.appendChild(document.createElement('div'));
+                div.className = 'progress-bar price bg-danger';
+                div.setAttribute('role', 'progressbar');
+                div.style = 'width: 0%';
+            }
+        }
+        if (this.qty_pstart) {
+            let divs = document.getElementsByClassName('progress-bar qty'); 
+            if (divs.length == 0) {
+                let form = document.forms[0];
+                let div = form.appendChild(document.createElement('div'));
+                div.className = 'progress qty mx-5';
+                div = div.appendChild(document.createElement('div'));
+                div.className = 'progress-bar qty bg-warning';
+                div.setAttribute('role', 'progressbar');
+                div.style = 'width: 0%';
+            }
+        }
         if (qtys == null) {
             return;
         }
@@ -1068,6 +1110,26 @@ class Meter extends Page {
         if (ids.length > 1) {
             let select = this.InputSelect(div, 'metering_point_id', ids);
         }
+        /*
+        if (this.price_pstart) {
+            let form = node.parent.parent;
+            let div = node.Div();
+            div.class('progress price mx-5');
+            div = div.Div();
+            div.class('progress-bar price bg-danger');
+            div.role('progressbar');
+            div.style = 'width: 0%';
+        }
+        if (this.qty_pstart) {
+            let form = node.parent.parent;
+            let div = node.Div();
+            div.class('progress qty mx-5');
+            div = div.Div();
+            div.class('progress-bar qty bg-warning');
+            div.role('progressbar');
+            div.style = 'width: 0%';
+        }
+        */
         node = body.Div();
         let chart_id = 'myChart';
         div = node.Div();

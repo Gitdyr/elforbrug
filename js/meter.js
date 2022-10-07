@@ -135,11 +135,16 @@ class Meter extends Page {
     }
 
     ChartResize() {
-        // let height = document.body.clientHeight - 40;
-        let height = window.innerHeight - 40;
+        let height = window.innerHeight - 20;
         let j = 0;
         for (let i = 0; i < document.body.children.length; i++) {
+            let style =  window.getComputedStyle(document.body.children[i]);
             height -= document.body.children[i].clientHeight;
+            // height -= parseInt(style.height);
+            height -= parseInt(style.marginTop);
+            height -= parseInt(style.marginBottom);
+            height -= parseInt(style.borderTop);
+            height -= parseInt(style.borderBottom);
             if (document.body.children[i].nodeName == 'DIV') {
                 j = i;
             }
@@ -1118,26 +1123,6 @@ class Meter extends Page {
         if (ids.length > 1) {
             let select = this.InputSelect(div, 'metering_point_id', ids);
         }
-        /*
-        if (this.price_pstart) {
-            let form = node.parent.parent;
-            let div = node.Div();
-            div.class('progress price mx-5');
-            div = div.Div();
-            div.class('progress-bar price bg-danger');
-            div.role('progressbar');
-            div.style = 'width: 0%';
-        }
-        if (this.qty_pstart) {
-            let form = node.parent.parent;
-            let div = node.Div();
-            div.class('progress qty mx-5');
-            div = div.Div();
-            div.class('progress-bar qty bg-warning');
-            div.role('progressbar');
-            div.style = 'width: 0%';
-        }
-        */
         node = body.Div();
         let chart_id = 'myChart';
         div = node.Div();
@@ -1169,7 +1154,7 @@ class Meter extends Page {
         if (select) {
             select.onchange = ev => this.MpChanged(ev);
         }
-        window.addEventListener('resize', this.ChartResize);
+        window.onresize = this.ChartResize;
         this.ShowMeter();
     }
 }

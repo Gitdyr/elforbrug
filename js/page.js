@@ -59,6 +59,7 @@ class Page {
     }
 
     Header() {
+        /*
         let head = this.html.Head();
         let meta = head.Meta();
         meta.name('viewport');
@@ -77,6 +78,7 @@ class Page {
         script = head.Script().src('js/chart.js');
         script = head.Script().src('js/htmlnode.js');
         script = head.Script().src('js/page.js');
+        */
     }
 
     Item(ul, name, href = null, page = null) {
@@ -128,7 +130,7 @@ class Page {
         localStorage.setItem('elforbrug', JSON.stringify(storage));
     }
 
-    RestoreStage() {
+    RestoreStorage() {
         let storage = localStorage.getItem('elforbrug');
         if (storage) {
             storage = JSON.parse(localStorage.getItem('elforbrug'));
@@ -431,7 +433,8 @@ class Page {
     }
 
     Display() {
-        this.RestoreStage();
+        window.onresize = null;
+        this.RestoreStorage();
         this.SetChargeCount();
         this.HandlePost();
         this.RefreshToken();
@@ -510,6 +513,13 @@ class Page {
     }
 
     TokenCallback(data, obj) {
+        if (data.error) {
+            obj.error = data.error;
+            console.log([data.error, data.info]);
+            obj.SetStorage('token', null);
+            obj.SetStorage('token_life', Date.now() + 60 * 1000);
+            obj.SaveStorage();
+        }
         if (data && data.result) {
             obj.SetStorage('token', data.result);
             obj.SetStorage('token_life', Date.now() + 24 * 3600 * 1000);
@@ -523,6 +533,9 @@ class Page {
         let token = this.GetStorage('token');
         let token_life = this.GetStorage('token_life');
         let refresh_token = this.GetStorage('refresh_token');
+        if (this.Get('refresh')) {
+            token_life = Date.now();
+        }
         if (token && token_life && token_life > Date.now()) {
             console.log('No refresh ' + token_life + ' ' + Date.now());
             return;

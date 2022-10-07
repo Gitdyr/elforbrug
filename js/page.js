@@ -522,7 +522,7 @@ class Page {
         }
         if (data && data.result) {
             obj.SetStorage('token', data.result);
-            obj.SetStorage('token_life', Date.now() + 24 * 3600 * 1000);
+            obj.SetStorage('token_life', Date.now() + 3600 * 1000);
             obj.SaveStorage();
         } else {
             console.log('Refresh failed');

@@ -455,7 +455,7 @@ class Page {
         }
         if (this.post.size && this.charge_count_changed) {
             let tables = document.getElementsByClassName('charges'); 
-            if (tables) {
+            if (tables.length) {
                 let tr = tables[0].firstChild.lastChild;
                 let input = tr.firstChild.firstChild;
                 input.focus();

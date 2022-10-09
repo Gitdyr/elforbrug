@@ -221,48 +221,48 @@ class Settings extends Page {
             'Prisområde (DK1/DK2)',
             'DK1 er Danmark vest, DK2 er Danmark øst'
         );
+        let metering_point_id = this.GetStorage('metering_point_id', '');
         let metering_points = this.GetStorage('metering_points');
         if (metering_points.length) {
-            let metering_point_id = this.GetStorage('metering_point_id', '');
             let select = this.InputSelect(
                 div,
                 'metering_point_id',
                 metering_points,
                 'Målepunkt'
             );
-            div.H2('Omkostninger i kr. ekskl. moms').class('text-center');
-            div.Br();
-            let table = div.Table();
-            table.class('charges');
-            let tr = table.Tr();
-            tr.class('text-center');
-            let th = tr.Th('Startdato');
-            th = tr.Th('Tidsinterval<br>Start');
-            th = tr.Th('Pr. kWh');
-            th = tr.Th('Pr. døgn');
-            th = tr.Th('Pr. måned');
-            let b_options = [''];
-            for (let i = 0; i < 24; i++) {
-                let val = ('0' + i).slice(-2) + ':00';
-                b_options.push(val);
-            }
-            for (let i = 0; i < this.charge_count; i++) {
-                let j = metering_point_id + '_' + i;
-                let sort_key = this.GetStorage('d_charge_' + j);
-                this.SetStorage('d_charge_' + j, sort_key.substring(0, 10));
-                let tr = table.Tr();
-                this.InputCell(tr, 'd_charge_' + j);  // Date
-                this.InputSelectCell(tr, 'b_charge_' + j, b_options);  // First
-                this.InputCell(tr, 'e_charge_' + j);  // Energi
-                this.InputCell(tr, 'i_charge_' + j);  // Daily
-                this.InputCell(tr, 'j_charge_' + j);  // Monthly
-            }
-            div.Br();
-            div.P(`
-                Startdatoen angiver starten af perioden.
-                Perioden stopper, når næste startdato er den aktuelle`
-            );
         }
+        div.H2('Omkostninger i kr. ekskl. moms').class('text-center');
+        div.Br();
+        let table = div.Table();
+        table.class('charges');
+        let tr = table.Tr();
+        tr.class('text-center');
+        let th = tr.Th('Startdato');
+        th = tr.Th('Tidsinterval<br>Start');
+        th = tr.Th('Pr. kWh');
+        th = tr.Th('Pr. døgn');
+        th = tr.Th('Pr. måned');
+        let b_options = [''];
+        for (let i = 0; i < 24; i++) {
+            let val = ('0' + i).slice(-2) + ':00';
+            b_options.push(val);
+        }
+        for (let i = 0; i < this.charge_count; i++) {
+            let j = metering_point_id + '_' + i;
+            let sort_key = this.GetStorage('d_charge_' + j);
+            this.SetStorage('d_charge_' + j, sort_key.substring(0, 10));
+            let tr = table.Tr();
+            this.InputCell(tr, 'd_charge_' + j);  // Date
+            this.InputSelectCell(tr, 'b_charge_' + j, b_options);  // First
+            this.InputCell(tr, 'e_charge_' + j);  // Energi
+            this.InputCell(tr, 'i_charge_' + j);  // Daily
+            this.InputCell(tr, 'j_charge_' + j);  // Monthly
+        }
+        div.Br();
+        div.P(`
+            Startdatoen angiver starten af perioden.
+            Perioden stopper, når næste startdato er den aktuelle`
+        );
         this.CheckBox(div, 'default', 'Udfyld konfiguration automatisk');
         this.CheckBox(div, 'force', 'Nulstil midlertidige data');
         this.SubmitButton(div);

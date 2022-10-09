@@ -482,9 +482,7 @@ class Meter extends Page {
     }
 
     GetPrices(contact_server) {
-        let time = this.GetLocalTime(Date.now());
         let price_area = this.GetStorage('price_area');
-        console.log('price_area=' + price_area + ' contact_server=' + contact_server);
         if (!price_area) {
             this.error = 'Prisområde er ikke konfigureret';
             return null;

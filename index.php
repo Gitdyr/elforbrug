@@ -171,14 +171,14 @@ class Index
                 'data':$json
             }
         ");
-        $head->Script()->src($bpath.'/js/bootstrap.min.js')->defer();
-        $head->Script()->src('js/htmlnode.js')->defer();
-        $head->Script()->src('js/page.js')->defer();
-        $head->Script()->src('js/chart.js')->defer();
-        $head->Script()->src('js/index.js')->defer();
-        $head->Script()->src('js/settings.js')->defer();
-        $head->Script()->src('js/points.js')->defer();
-        $head->Script()->src('js/meter.js')->defer();
+        $head->JavaScript($bpath.'/js/bootstrap.min.js');
+        $head->JavaScript('js/htmlnode.js');
+        $head->JavaScript('js/page.js');
+        $head->JavaScript('js/chart.js');
+        $head->JavaScript('js/index.js');
+        $head->JavaScript('js/settings.js');
+        $head->JavaScript('js/points.js');
+        $head->JavaScript('js/meter.js');
         $this->html->Body();
         $this->html->Display();
     }

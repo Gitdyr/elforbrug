@@ -136,6 +136,7 @@ class Settings extends Page {
                 // This will force RefreshToken to run
                 // which will in turn call TokenCallback and
                 // PointsCallback
+                this.RefreshToken((r) => this.GetPoints(r));
             }
             this.info = 'Indstillinger opdateret';
             this.SaveStorage();
@@ -155,52 +156,37 @@ class Settings extends Page {
         }
     }
 
-    PointsCallback(data, obj) {
-        let body = obj.html.First('body');
-        obj.Alert(body);
-        if (obj.error) {
+    PointsCallback(data) {
+        let body = this.html.First('body');
+        this.Alert(body);
+        if (this.error) {
             return;
         }
         let result = data.result[0];
         let id = result.meteringPointId;
         let type = result.typeOfMP;
-        obj.SetStorage('metering_point_id', id);
-        obj.SetStorage('typeOfMP', type);
+        this.SetStorage('metering_point_id', id);
+        this.SetStorage('typeOfMP', type);
         let metering_points = [[type, id]];
         if (result.childMeteringPoints) {
             for (const point of result.childMeteringPoints) {
                 metering_points.push([point.typeOfMP, point.meteringPointId]);
             }
         }
-        obj.SetStorage('metering_points', metering_points);
+        this.SetStorage('metering_points', metering_points);
         console.log('Metering points updated');
-        obj.SaveStorage();
-        obj.info = obj.saved_info;
-        obj.Display();
+        this.SaveStorage();
+        this.info = this.saved_info;
+        this.Display();
     }
 
-    TokenCallback(data, obj) {
-        let body = obj.html.First('body');
-        obj.Alert(body);
-        if (obj.error) {
-            return;
-        }
-        let token = data.result;
-        if (token) {
-            obj.SetStorage('token', token);
-            obj.SetStorage('token_life', Date.now() + 24 * 3600 * 1000);
-            obj.SaveStorage();
-            console.log('Token updated');
-            obj.info = obj.saved_info;
-            obj.Display();
-            let data = {
-                action: 'points',
-                token: token
-            };
-            obj.DoAjax(data, obj.PointsCallback);
-        } else {
-            console.log('Refresh failed');
-        }
+    GetPoints() {
+        let token = this.GetStorage('token');
+        let data = {
+            action: 'points',
+            token: token
+        };
+        this.DoAjax(data, (r) => this.PointsCallback(r));
     }
 
     MpChanged(e) {

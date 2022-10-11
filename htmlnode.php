@@ -87,6 +87,12 @@ class HtmlNode {
         $this->parent->nodes[] = $node;
         return $node;
     }
+
+    public function JavaScript($src)
+    {
+        $src .= '?'.filemtime($src);
+        $this->Script()->src($src)->defer();
+    }
     
     public function Display()
     {

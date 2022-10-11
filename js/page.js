@@ -407,28 +407,28 @@ class Page {
         this.Contents(body);
     }
 
-    Submit(e, obj) {
+    Submit(e) {
         let inputs = document.querySelectorAll('input,select'); 
         for (let input of inputs) {
             if (input.type == 'checkbox' && !input.checked) {
-                obj.post.set(input.name, '');
+                this.post.set(input.name, '');
             } else {
-                obj.post.set(input.name, input.value);
+                this.post.set(input.name, input.value);
             }
         }
-        obj.Display();
+        this.Display();
         e.preventDefault();
     }
 
-    ItemSelected(e, obj) {
+    ItemSelected(e) {
         e.preventDefault();
         history.replaceState({}, null, e.target.href);
         let page = this.GetPage();
-        obj.post = new Map();
-        obj.error = false;
-        obj.info = false;
-        obj.saved_info = false;
-        obj.detail = false;
+        this.post = new Map();
+        this.error = false;
+        this.info = false;
+        this.saved_info = false;
+        this.detail = false;
         window[page].Display();
     }
 
@@ -437,19 +437,18 @@ class Page {
         this.RestoreStorage();
         this.SetChargeCount();
         this.HandlePost();
-        this.RefreshToken();
         this.html = new HtmlNode();
         // this.Header();
         this.Body();
         this.html.Display();
-        document.forms[0].addEventListener('submit', (e) => this.Submit(e, this));
+        document.forms[0].addEventListener('submit', (e) => this.Submit(e));
         let items = document.getElementsByTagName('a'); 
         for (let item of items) {
             if (!item.classList.contains('dropdown-toggle')) {
                 if (item.classList.contains('dropdown-item') ||
                     item.classList.contains('nav-link'))
                 {
-                    item.onclick = (e) => this.ItemSelected(e, this);
+                    item.onclick = (e) => this.ItemSelected(e);
                 }
             }
         }
@@ -487,7 +486,6 @@ class Page {
         };
         xhttp.open('POST', url, true);
         xhttp.setRequestHeader('Content-type', 'application/json');
-        let obj = this;
         xhttp.onload = function() {
             let response;
             if (this.responseText) {
@@ -502,34 +500,40 @@ class Page {
                 response = '';
                 console.log(this);
             }
-            load(response, obj);
+            load(response);
         }
         if (progress) {
             xhttp.onprogress = function(e) {
-                progress(e, obj, this);
+                progress(e, this);
             }
         }
         xhttp.send(JSON.stringify(data));
     }
 
-    TokenCallback(data, obj) {
+    TokenCallback(data) {
         if (data.error) {
-            obj.error = data.error;
+            this.error = data.error;
             console.log([data.error, data.info]);
-            obj.SetStorage('token', null);
-            obj.SetStorage('token_life', Date.now() + 60 * 1000);
-            obj.SaveStorage();
+            this.SetStorage('token', null);
+            this.SetStorage('token_life', Date.now() + 60 * 1000);
+            this.SaveStorage();
+            this.Display();
         }
         if (data && data.result) {
-            obj.SetStorage('token', data.result);
-            obj.SetStorage('token_life', Date.now() + 3600 * 1000);
-            obj.SaveStorage();
+            this.SetStorage('token', data.result);
+            this.SetStorage('token_life', Date.now() + 3600 * 1000);
+            this.SaveStorage();
+            let call_next = this.call_next;
+            if (call_next) {
+                delete this.call_next;
+                call_next();
+            }
         } else {
             console.log('Refresh failed');
         }
     }
 
-    RefreshToken() {
+    RefreshToken(call_next) {
         let token = this.GetStorage('token');
         let token_life = this.GetStorage('token_life');
         let refresh_token = this.GetStorage('refresh_token');
@@ -538,6 +542,7 @@ class Page {
         }
         if (token && token_life && token_life > Date.now()) {
             console.log('No refresh ' + token_life + ' ' + Date.now());
+            call_next();
             return;
         }
         if (refresh_token && !token && token_life) {
@@ -545,11 +550,12 @@ class Page {
         }
         if (refresh_token) {
             console.log('Must refresh ' + token_life + ' ' + Date.now());
+            this.call_next = () => call_next();
             let data = {
                 action: 'token',
                 token: refresh_token
             };
-            this.DoAjax(data, this.TokenCallback);
+            this.DoAjax(data, (r) => this.TokenCallback(r));
         }
     }
 

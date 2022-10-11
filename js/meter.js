@@ -309,67 +309,47 @@ class Meter extends Page {
         return ldate + ' ' + ltime;
     }
 
-    QtyProgress(e, obj, req) {
+    QtyProgress(e, req) {
         let divs = document.getElementsByClassName('progress-bar qty'); 
         if (divs.length) {
             let m = req.response.match(/"end":"[^"]*"/g);
             if (m && m.length) {
                 m = m.at(-1).slice(7, 17);
                 let date = new Date(m);
-                if (obj.qty_plen > 0) {
-                    let width = (date.getTime() - obj.qty_pstart);
-                    width = width * 100 / obj.qty_plen;
+                if (this.qty_plen > 0) {
+                    let width = (date.getTime() - this.qty_pstart);
+                    width = width * 100 / this.qty_plen;
                     console.log('qty width=' + width);
                     divs[0].style = 'width: ' + width + '%';
-                    divs[0].innerHTML = obj.GetLocalTime(date).slice(0, 10);
+                    divs[0].innerHTML = this.GetLocalTime(date).slice(0, 10);
                 }
             }
-        } else {
-            /*
-            let form = document.forms[0];
-            let div = form.appendChild(document.createElement('div'));
-            div.className = 'progress qty mx-5';
-            div = div.appendChild(document.createElement('div'));
-            div.className = 'progress-bar qty bg-warning';
-            div.setAttribute('role', 'progressbar');
-            div.style = 'width: 0%';
-            */
         }
     }
 
-    PriceProgress(e, obj, req) {
+    PriceProgress(e, req) {
         let divs = document.getElementsByClassName('progress-bar price'); 
         if (divs.length) {
             let m = req.response.match(/"HourDK":"[^"]*"/g);
             if (m && m.length) {
                 m = m.at(-1).slice(10, 20);
                 let date = new Date(m);
-                if (obj.price_plen > 0) {
-                    let width = (date.getTime() - obj.price_pstart);
-                    width = width * 100 / obj.price_plen;
+                if (this.price_plen > 0) {
+                    let width = (date.getTime() - this.price_pstart);
+                    width = width * 100 / this.price_plen;
                     console.log('price width=' + width);
                     divs[0].style = 'width: ' + width + '%';
-                    divs[0].innerHTML = obj.GetLocalTime(date).slice(0, 10);
+                    divs[0].innerHTML = this.GetLocalTime(date).slice(0, 10);
                 }
             }
-        } else {
-            /*
-            let form = document.forms[0];
-            let div = form.appendChild(document.createElement('div'));
-            div.className = 'progress price mx-5';
-            div = div.appendChild(document.createElement('div'));
-            div.className = 'progress-bar price bg-danger';
-            div.setAttribute('role', 'progressbar');
-            div.style = 'width: 0%';
-            */
         }
     }
 
-    QuantityCallback(data, obj) {
+    QuantityCallback(data) {
         if (data.error) {
-            obj.error = data.error;
+            this.error = data.error;
             console.log(data.info);
-            obj.Display();
+            this.Display();
             return;
         }
         // console.log(data);
@@ -378,8 +358,8 @@ class Meter extends Page {
             return;
         }
         let result = data.result[0].MyEnergyData_MarketDocument;
-        let metering_point_id = obj.GetStorage('metering_point_id');
-        let qtys = obj.GetStorage('qtys', {});
+        let metering_point_id = this.GetStorage('metering_point_id');
+        let qtys = this.GetStorage('qtys', {});
         if (!qtys[metering_point_id]) {
             qtys[metering_point_id] = {};
         }
@@ -387,7 +367,7 @@ class Meter extends Page {
         for (const period of result.Period) {
             let timeInterval = period.timeInterval;
             let date = Date.parse(timeInterval.start);
-            let ldate = obj.GetLocalTime(date).slice(0, 10);
+            let ldate = this.GetLocalTime(date).slice(0, 10);
             let ndx = 0;
             if (!qtys[metering_point_id][ldate]) {
                 qtys[metering_point_id][ldate] = [];
@@ -396,7 +376,7 @@ class Meter extends Page {
             for (const record of period.Point) {
                 // console.log(record);
                 let qty = record['out_Quantity.quantity'];
-                let time = obj.GetLocalTime(date);
+                let time = this.GetLocalTime(date);
                 if (qtys[metering_point_id][ldate][ndx]) {
                     qtys[metering_point_id][ldate][ndx][1] = qty;
                 } else {
@@ -406,18 +386,18 @@ class Meter extends Page {
                 ndx++;
             }
         }
-        obj.SetStorage('qtys', qtys);
+        this.SetStorage('qtys', qtys);
         let offset;
-        if (obj.qty_final) {
+        if (this.qty_final) {
             offset = 24;
-            delete obj.qty_pstart;
+            delete this.qty_pstart;
             let progress = document.getElementsByClassName('progress qty'); 
             if (progress.length) {
                 setTimeout(() => progress[0].remove(), 1000);
             }
         } else {
             offset = 0;
-            setTimeout(() => obj.GetQtys(true), 2000);
+            setTimeout(() => this.GetQtys(true), 2000);
             let progress = document.getElementsByClassName('progress qty'); 
             if (progress.length) {
                 setTimeout(() => {
@@ -431,19 +411,19 @@ class Meter extends Page {
                 1000);
             }
         }
-        obj.SetStorage('next_qty_update_' + metering_point_id,
-            obj.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
-        obj.SaveStorage();
-        obj.ShowMeter();
+        this.SetStorage('next_qty_update_' + metering_point_id,
+            this.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
+        this.SaveStorage();
+        this.ShowMeter();
     }
 
-    PriceCallback(data, obj) {
+    PriceCallback(data) {
         if (data.error) {
-            obj.error = data.error;
-            obj.Display();
+            this.error = data.error;
+            this.Display();
             return;
         }
-        let prices = obj.GetStorage('prices', {});
+        let prices = this.GetStorage('prices', {});
         let ldate = null;
         let ndx = 0;
         for (const record of data.records) {
@@ -464,24 +444,24 @@ class Meter extends Page {
             }
             ndx++;
         }
-        obj.SetStorage('prices', prices);
-        let time = obj.GetLocalTime(Date.now());
+        this.SetStorage('prices', prices);
+        let time = this.GetLocalTime(Date.now());
         let next_price_update;
         if (time.slice(11, 13) >= '13') {
-            time = obj.GetLocalTime(Date.now() + 24 * 3600 * 1000);
+            time = this.GetLocalTime(Date.now() + 24 * 3600 * 1000);
         }
         next_price_update = time.slice(0, 11) + '13:00:00';
-        obj.SetStorage('next_price_update', next_price_update);
-        obj.SaveStorage();
-        obj.ShowMeter();
-        delete obj.price_pstart;
+        this.SetStorage('next_price_update', next_price_update);
+        this.SaveStorage();
+        this.ShowMeter();
+        delete this.price_pstart;
         let progress = document.getElementsByClassName('progress price'); 
         if (progress.length) {
             setTimeout(() => progress[0].remove(), 1000);
         }
     }
 
-    GetPrices(contact_server) {
+    GetPrices(contact_server = true) {
         let price_area = this.GetStorage('price_area');
         if (!price_area) {
             this.error = 'Prisområde er ikke konfigureret';
@@ -521,7 +501,9 @@ class Meter extends Page {
             this.price_pstart = date.getTime();
             date = new Date(stop);
             this.price_plen = date.getTime() - this.price_pstart;
-            this.DoAjax(data, this.PriceCallback, this.PriceProgress);
+            this.DoAjax(data,
+                (r) => this.PriceCallback(r),
+                (e, r) => this.PriceProgress(e, r));
         }
         return null;
     }
@@ -580,7 +562,9 @@ class Meter extends Page {
             this.qty_pstart = date.getTime();
             date = new Date(stop);
             this.qty_plen = date.getTime() - this.qty_pstart;
-            this.DoAjax(data, this.QuantityCallback, this.QtyProgress);
+            this.DoAjax(data,
+                (r) => this.QuantityCallback(r),
+                (e, r) => this.QtyProgress(e, r));
         }
         return null;
     }
@@ -1085,13 +1069,13 @@ class Meter extends Page {
         }
         if (this.error == false) {
             if (prefix == 'c') {
-                this.GetQtys(true);
-                this.GetPrices(true);
+                this.RefreshToken(() => this.GetQtys(true));
+                this.GetPrices();
             } else if (prefix == 'q') {
-                this.GetQtys(true);
-                this.GetPrices(true);
+                this.RefreshToken(() => this.GetQtys(true));
+                this.GetPrices();
             } else if (prefix == 'p') {
-                this.GetPrices(true);
+                this.GetPrices();
             }
         }
         this.start_ndx = null;

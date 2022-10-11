@@ -6,13 +6,13 @@
  */
 
 class Points extends Page {
-    PointsCallback(data, obj) {
+    PointsCallback(data) {
         if (data.error) {
-            obj.error = data.error;
-            obj.Display();
+            this.error = data.error;
+            this.Display();
             return;
         }
-        let body = obj.html.First('body');
+        let body = this.html.First('body');
         let div = body.First('form').First('div').First('div');
         for (const result of data.result) {
             let table = div.Table();
@@ -44,20 +44,22 @@ class Points extends Page {
                 tr.Td(val).class('text-break');
             }
         }
-        obj.html.Display();
+        this.html.Display();
+    }
+
+    GetPoints() {
+        let token = this.GetStorage('token');
+        let data = {
+            action: 'points',
+            token: token
+        };
+        this.DoAjax(data, (r) => this.PointsCallback(r));
     }
 
     HandlePost() {
         super.HandlePost();
         if (this.error == false) {
-            let token = this.GetStorage('token');
-            if (token) {
-                let data = {
-                    action: 'points',
-                    token: token
-                };
-                this.DoAjax(data, this.PointsCallback);
-            }
+            this.RefreshToken(() => this.GetPoints());
         }
     }
 

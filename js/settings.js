@@ -16,6 +16,8 @@ class Settings extends Page {
                 this.SetStorage('prices', {});
                 this.SetStorage('token', '');
                 this.SetStorage('token_life', '');
+                this.SetStorage('next_qty_update_' + metering_point_id, '');
+                this.SetStorage('next_price_update', '');
             }
             if (this.GetStorage('default')) {
                 let lines = [

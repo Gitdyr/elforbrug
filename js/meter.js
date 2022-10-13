@@ -388,6 +388,7 @@ class Meter extends Page {
         }
         this.SetStorage('qtys', qtys);
         let offset;
+        console.log('qty_final=' + this.qty_final);
         if (this.qty_final) {
             offset = 24;
             delete this.qty_pstart;
@@ -533,6 +534,8 @@ class Meter extends Page {
             // All data cached
             return qtys;
         }
+        this.SetStorage('next_qty_update_' + metering_point_id, now);
+        this.SaveStorage();
         stop = this.GetLocalTime(Date.now()).slice(0, 10);
         start = this.Get('first', start);
         stop = this.Get('last', stop);
@@ -541,6 +544,7 @@ class Meter extends Page {
         if (stop_date - start_date > 365 * 24 * 3600 * 1000) {
             start_date.setFullYear(1 + start_date.getFullYear());
             stop = this.GetLocalTime(start_date).slice(0, 10);
+            this.qty_final = false;
         } else {
             this.qty_final = true;
         }

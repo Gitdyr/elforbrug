@@ -395,6 +395,10 @@ class Meter extends Page {
             if (progress.length) {
                 setTimeout(() => progress[0].remove(), 1000);
             }
+            this.SetStorage('next_qty_update_' + metering_point_id,
+                this.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
+            this.SaveStorage();
+            this.ShowMeter();
         } else {
             offset = 0;
             setTimeout(() => this.GetQtys(true), 2000);
@@ -411,10 +415,6 @@ class Meter extends Page {
                 1000);
             }
         }
-        this.SetStorage('next_qty_update_' + metering_point_id,
-            this.GetLocalTime(Date.now() + offset * 3600 * 1000).slice(0, 10));
-        this.SaveStorage();
-        this.ShowMeter();
     }
 
     PriceCallback(data) {

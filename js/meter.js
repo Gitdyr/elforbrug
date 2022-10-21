@@ -25,6 +25,7 @@ class Meter extends Page {
         },
         tooltip: {
             mode: 'x',
+            reverse: true,
             callbacks: {
                 title: (items) => {
                     let dataIndex = items[0].dataIndex;

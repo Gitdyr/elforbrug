@@ -24,26 +24,36 @@ class Meter extends Page {
             text: ''
         },
         tooltip: {
-            mode: 'index',
+            mode: 'x',
             callbacks: {
-                title: (item) => {
-                    let dataIndex = item[0].dataIndex;
+                title: (items) => {
+                    let dataIndex = items[0].dataIndex;
                     return this.keys[this.start_ndx + dataIndex];
                 },
-                label: (tooltipItem) => {
-                    return tooltipItem.parsed.y.toFixed(3).replace('.', ',');
+                label: (item) => {
+                    let pval = item.parsed.y.toFixed(3);
+                    if (item.dataset.id == 'Mean') {
+                        let dataIndex = item.dataIndex;
+                        let val = this.qty_data[dataIndex].toFixed(3);
+                        pval = pval.replace('.', ',') + ' kr';
+                        val = val.replace('.', ',') + ' kWh';
+                        // return pval + ' [' + val + ']';
+                        return val;
+                    } else if (item.dataset.id == 'Quantity') {
+                        return pval.replace('.', ',') + ' kWh';
+                    }
+                    return pval.replace('.', ',') + ' kr';
                 },
-                footer: (tooltipItem) => {
-                    if (tooltipItem.length < 2) {
+                footer: (items) => {
+                    if (items.length < 2) {
                         return '';
                     }
                     let sum = 0;
-                    for (const item of tooltipItem) {
-                        if (item.dataset.id != 'Mean') {
-                            sum += item.parsed.y;
-                        }
+                    for (const item of items) {
+                        sum += item.parsed.y;
                     }
-                    return 'I alt: ' + sum.toFixed(2).replace('.', ',');
+                    let val = sum.toFixed(2);
+                    return 'I alt: ' + val.replace('.', ',') + ' kr';
                 }
             }
         },

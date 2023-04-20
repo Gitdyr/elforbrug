@@ -272,6 +272,9 @@ class Page {
         div.class('form-check');
         let checkbox = div.Input();
         checkbox.type('checkbox');
+        if (this.GetStorage(name)) {
+            checkbox.checked('checked');
+        }
         checkbox.name(name);
         checkbox.id(name);
         checkbox.class('form-check-input');

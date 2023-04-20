@@ -63,6 +63,20 @@ class Meter extends Page {
                 const i = li.datasetIndex;
                 e.chart.data.datasets[i].hidden =
                     !e.chart.data.datasets[i].hidden;
+                if (e.chart.data.datasets[i].id == 'Vat') {
+                    let factor = 0.8;
+                    if (e.chart.data.datasets[i].hidden) {
+                        factor = 1.25;
+                    }
+                    let tables = e.chart.data.datasets;
+                    for (let table of tables) {
+                        for (let i = 0; i < table.data.length; i++) {
+                            if (table.id != 'Mean' && table.id != 'Vat') {
+                                table.data[i] = table.data[i] * factor;
+                            }
+                        }
+                    }
+                }
                 if (e.chart.data.datasets[i].id != 'Mean') {
                     this.RefreshMean();
                 }
@@ -217,11 +231,12 @@ class Meter extends Page {
     }
 
     AddVat() {
-        const tables = this.datasets;
+        let tables = this.datasets;
         let data = Array(this.labels.length).fill(0);
-        for (const table of tables) {
+        for (let table of tables) {
             for (let i = 0; i < table.data.length; i++) {
                 data[i] += table.data[i] * 0.25;
+                table.data[i] += table.data[i] * 0.25;
             }
         }
         let dataset = {
@@ -230,7 +245,8 @@ class Meter extends Page {
             backgroundColor: this.vat_color,
             borderColor: 'rgb(255, 99, 132)',
             stack: 'Stack 0',
-            data: data
+            data: data,
+            hidden: true
         };
         this.datasets.push(dataset);
     }

@@ -892,7 +892,6 @@ class Meter extends Page {
         if (prefix == 'p') {
             this.AddPrice(price_data.slice(this.start_ndx, this.stop_ndx));
             this.AddIvCharge(iv_data.slice(this.start_ndx, this.stop_ndx));
-            this.AddJvCharge(jv_data.slice(this.start_ndx, this.stop_ndx));
             this.AddEvCharge(ev_data.slice(this.start_ndx, this.stop_ndx));
             this.AddVat();
         }

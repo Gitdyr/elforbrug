@@ -10,8 +10,10 @@ class Meter extends Page {
     iv_color = 'rgb(55, 99, 32)';
     jv_color = 'rgb(85, 129, 62)';
     ev_color = 'rgb(75, 129, 162)';
+    sum_color = 'rgb(255, 199, 132)';
     vat_color = 'rgb(155, 155, 155)';
     qty_color = 'rgb(180, 170, 80)';
+    border_color = 'rgb(255, 99, 132)';
     start_ndx = null;
     stop_ndx = null;
     keys = [];
@@ -51,11 +53,16 @@ class Meter extends Page {
                     }
                     let sum = 0;
                     for (const item of items) {
-                        sum += item.parsed.y;
+                        if (item.dataset.id != 'Sum') {
+                            sum += item.parsed.y;
+                        }
                     }
                     let val = sum.toFixed(2);
                     return 'I alt: ' + val.replace('.', ',') + ' kr';
                 }
+            },
+            filter: (item) => {
+                return item.dataset.id != 'Sum';
             }
         },
         legend: {
@@ -71,7 +78,10 @@ class Meter extends Page {
                     let tables = e.chart.data.datasets;
                     for (let table of tables) {
                         for (let i = 0; i < table.data.length; i++) {
-                            if (table.id != 'Mean' && table.id != 'Vat') {
+                            if (table.id != 'Mean' &&
+                                table.id != 'Vat' &&
+                                table.id != 'Sum'
+                            ) {
                                 table.data[i] = table.data[i] * factor;
                             }
                         }
@@ -193,7 +203,7 @@ class Meter extends Page {
             label: 'Afgift pr. døgn [kr]',
             id: 'IvCharge',
             backgroundColor: this.iv_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
             data: data
         };
@@ -208,7 +218,7 @@ class Meter extends Page {
             label: 'Afgift pr. måned [kr]',
             id: 'JvCharge',
             backgroundColor: this.jv_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
             data: data
         };
@@ -223,8 +233,29 @@ class Meter extends Page {
             label: 'Afgift pr. kWh [kr]',
             id: 'EvCharge',
             backgroundColor: this.ev_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
+            data: data
+        };
+        this.datasets.push(dataset);
+    }
+
+    AddSum() {
+        let tables = this.datasets;
+        let data = Array(this.labels.length).fill(0);
+        for (let table of tables) {
+            for (let i = 0; i < table.data.length; i++) {
+                data[i] += table.data[i];
+                // table.data[i] += table.data[i];
+            }
+        }
+        let dataset = {
+            type: 'line',
+            label: 'I alt [kr]',
+            id: 'Sum',
+            backgroundColor: this.sum_color,
+            borderColor: this.sum_color,
+            order: -1,
             data: data
         };
         this.datasets.push(dataset);
@@ -235,7 +266,9 @@ class Meter extends Page {
         let data = Array(this.labels.length).fill(0);
         for (let table of tables) {
             for (let i = 0; i < table.data.length; i++) {
-                data[i] += table.data[i] * 0.25;
+                if (table.id != 'Sum') {
+                    data[i] += table.data[i] * 0.25;
+                }
                 table.data[i] += table.data[i] * 0.25;
             }
         }
@@ -243,7 +276,7 @@ class Meter extends Page {
             label: 'Moms [kr]',
             id: 'Vat',
             backgroundColor: this.vat_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
             data: data,
             hidden: true
@@ -257,6 +290,12 @@ class Meter extends Page {
         let cost_sum = 0;
         let qty_sum = 0;
         for (const table of tables) {
+            if (table.id == 'Vat') {
+                continue;
+            }
+            if (table.id == 'Sum') {
+                continue;
+            }
             cost_sum += this.Sum(table.data);
         }
         qty_sum = this.Sum(data);
@@ -267,7 +306,7 @@ class Meter extends Page {
             label: 'Vægtet pris [kr]',
             id: 'Mean',
             backgroundColor: this.qty_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 1',
             data: data
         };
@@ -280,7 +319,7 @@ class Meter extends Page {
             label: 'Spotpris [kr]',
             id: 'Cost',
             backgroundColor: this.price_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
             data: data
         };
@@ -295,7 +334,7 @@ class Meter extends Page {
             label: 'Spotpris [kr/kWh]',
             id: 'Price',
             backgroundColor: this.price_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             stack: 'Stack 0',
             data: data
         };
@@ -307,7 +346,7 @@ class Meter extends Page {
             label: 'Målerdata [kWh]',
             id: 'Quantity',
             backgroundColor: this.qty_color,
-            borderColor: 'rgb(255, 99, 132)',
+            borderColor: this.border_color,
             data: data
         };
         this.datasets.push(dataset);
@@ -886,6 +925,7 @@ class Meter extends Page {
             this.AddIvCharge(iv_data.slice(this.start_ndx, this.stop_ndx));
             this.AddJvCharge(jv_data.slice(this.start_ndx, this.stop_ndx));
             this.AddEvCharge(ev_data.slice(this.start_ndx, this.stop_ndx));
+            this.AddSum();
             this.AddVat();
             this.AddMean(qty_data.slice(this.start_ndx, this.stop_ndx));
         }
@@ -893,6 +933,7 @@ class Meter extends Page {
             this.AddPrice(price_data.slice(this.start_ndx, this.stop_ndx));
             this.AddIvCharge(iv_data.slice(this.start_ndx, this.stop_ndx));
             this.AddEvCharge(ev_data.slice(this.start_ndx, this.stop_ndx));
+            this.AddSum();
             this.AddVat();
         }
         if (prefix == 'q') {
@@ -911,6 +952,9 @@ class Meter extends Page {
                 continue;
             }
             if (table.id == 'Mean') {
+                continue;
+            }
+            if (table.id == 'Sum') {
                 continue;
             }
             cost_sum += this.Sum(table.data);

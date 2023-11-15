@@ -1054,11 +1054,14 @@ class Meter extends Page {
             return -step_list[this.page];
         } else {
             return step_list[this.page];
-     }
+        }
     }
 
     PrevNext(e, steps) {
-        let b = e.target.parentNode;
+        let b = e.target;
+        if (b.tagName == 'IMG') {
+            b = b.parentNode;
+        }
         if (steps > 1 || steps < -1) {
             steps = this.GetNextSteps(steps);
         }

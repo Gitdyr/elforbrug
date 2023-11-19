@@ -11,66 +11,126 @@ class Settings extends Page {
         super.HandlePost();
         let metering_point_id = this.GetStorage('metering_point_id', '');
         if (this.post.size) {
-            if (this.GetStorage('force')) {
+            let submitter = this.post.get('submitter');
+            let profile = this.post.get('profile');
+            if (submitter == 'tmp') {
                 this.SetStorage('qtys', {});
                 this.SetStorage('prices', {});
                 this.SetStorage('token', '');
                 this.SetStorage('token_life', '');
             }
-            if (this.GetStorage('default')) {
+            if (submitter == 'profile') {
                 let lines = [
-                    [ '2022-01-01', '00:00', '1.25159', '0', '21' ],
-                    [ '2022-01-01', '17:00', '1,64599', '0', '21' ],
-                    [ '2022-01-01', '20:00', '1,25159', '0', '21' ],
-                    [ '2022-04-01', '00:00', '1,30009', '0', '21' ],
-                    [ '2022-04-01', '17:00', '1,76489', '0', '21' ],
-                    [ '2022-04-01', '20:00', '1,13009', '0', '21' ],
-                    [ '2022-07-01', '00:00', '1,17559', '0', '21' ],
-                    [ '2022-07-01', '17:00', '1,64039', '0', '21' ],
-                    [ '2022-07-01', '20:00', '1,17559', '0', '21' ],
-                    [ '2022-10-01', '00:00', '1,13559', '0', '21' ],
-                    [ '2022-10-01', '17:00', '1,60039', '0', '21' ],
-                    [ '2022-10-01', '20:00', '1,13559', '0', '21' ],
-                    [ '2023-01-01', '00:00', '0,29010', '0', '21' ],
-                    [ '2023-01-01', '06:00', '0,63030', '0', '21' ],
-                    [ '2023-01-01', '17:00', '1,65080', '0', '21' ],
-                    [ '2023-01-01', '21:00', '0,63030', '0', '21' ],
-                    [ '2023-02-01', '00:00', '0,30370', '0', '44.75' ],
-                    [ '2023-02-01', '06:00', '0,67110', '0', '44.75' ],
-                    [ '2023-02-01', '17:00', '1,77330', '0', '44.75' ],
-                    [ '2023-02-01', '21:00', '0,67110', '0', '44.75' ],
-                    [ '2023-03-01', '00:00', '0,27090', '0', '44.75' ],
-                    [ '2023-03-01', '06:00', '0,57280', '0', '44.75' ],
-                    [ '2023-03-01', '17:00', '1,47840', '0', '44.75' ],
-                    [ '2023-03-01', '21:00', '0,57280', '0', '44.75' ],
-                    [ '2023-04-01', '00:00', '0,27090', '0', '44.75' ],
-                    [ '2023-04-01', '06:00', '0,34640', '0', '44.75' ],
-                    [ '2023-04-01', '17:00', '0,70870', '0', '44.75' ],
-                    [ '2023-04-01', '21:00', '0,34640', '0', '44.75' ],
-                    [ '2023-07-01', '00:00', '0,95990', '0', '44.75' ],
-                    [ '2023-07-01', '06:00', '1,03540', '0', '44.75' ],
-                    [ '2023-07-01', '17:00', '1,39770', '0', '44.75' ],
-                    [ '2023-07-01', '21:00', '1,03540', '0', '44.75' ],
-                    [ '2023-10-01', '00:00', '0,95990', '0', '44.75' ],
-                    [ '2023-10-01', '06:00', '1,26180', '0', '44.75' ],
-                    [ '2023-10-01', '17:00', '2,16740', '0', '44.75' ],
-                    [ '2023-10-01', '21:00', '1,26180', '0', '44.75' ],
+                    [ '2022-01-01', '00:00', 'kwh', '2general', '0.90300' ],
+                    [ '2022-01-01', '00:00', 'kwh', '3balance', '0.00229' ],
+                    [ '2022-01-01', '00:00', 'kwh', '5system', '0.06100' ],
+                    [ '2022-01-01', '00:00', 'kwh', '6transm', '0.04900' ],
+                    [ '2022-01-01', '00:00', 'kwh', '8radc', '0.23630' ],
+                    [ '2022-01-01', '17:00', 'kwh', '8radc', '0.63070' ],
+                    [ '2022-01-01', '20:00', 'kwh', '8radc', '0.23630' ],
+                    [ '2022-01-01', '00:00', 'month', '9subsc', '21.00' ],
+
+                    [ '2022-04-01', '00:00', 'kwh', '2general', '0.90300' ],
+                    [ '2022-04-01', '00:00', 'kwh', '3balance', '0.00229' ],
+                    [ '2022-04-01', '00:00', 'kwh', '4pso', '-0.01550' ],
+                    [ '2022-04-01', '00:00', 'kwh', '5system', '0.06100' ],
+                    [ '2022-04-01', '00:00', 'kwh', '6transm', '0.04900' ],
+                    [ '2022-04-01', '00:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-04-01', '17:00', 'kwh', '8radc', '0.76510' ],
+                    [ '2022-04-01', '20:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-04-01', '00:00', 'month', '9subsc', '21.00' ],
+
+                    [ '2022-07-01', '00:00', 'kwh', '2general', '0.90300' ],
+                    [ '2022-07-01', '00:00', 'kwh', '3balance', '0.00229' ],
+                    [ '2022-07-01', '00:00', 'kwh', '5system', '0.06100' ],
+                    [ '2022-07-01', '00:00', 'kwh', '6transm', '0.04900' ],
+                    [ '2022-07-01', '00:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-07-01', '17:00', 'kwh', '8radc', '0.76510' ],
+                    [ '2022-07-01', '20:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-07-01', '00:00', 'month', '9subsc', '21.00' ],
+
+                    [ '2022-10-01', '00:00', 'kwh', '2general', '0.72300' ],
+                    [ '2022-10-01', '00:00', 'kwh', '3balance', '0.00229' ],
+                    [ '2022-10-01', '00:00', 'kwh', '5system', '0.06100' ],
+                    [ '2022-10-01', '00:00', 'kwh', '6transm', '0.04900' ],
+                    [ '2022-10-01', '00:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-10-01', '17:00', 'kwh', '8radc', '0.76510' ],
+                    [ '2022-10-01', '20:00', 'kwh', '8radc', '0.30030' ],
+                    [ '2022-10-01', '00:00', 'month', '9subsc', '21.00' ],
+
+                    [ '2023-01-01', '00:00', 'kwh', '2general', '0.00800' ],
+                    [ '2023-01-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-01-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-01-01', '00:00', 'kwh', '8radc', '0.17010' ],
+                    [ '2023-01-01', '06:00', 'kwh', '8radc', '0.51030' ],
+                    [ '2023-01-01', '17:00', 'kwh', '8radc', '1.53080' ],
+                    [ '2023-01-01', '21:00', 'kwh', '8radc', '0.51030' ],
+                    [ '2023-01-01', '00:00', 'month', '9subsc', '21.00' ],
+
+                    [ '2023-02-01', '00:00', 'kwh', '2general', '0.00800' ],
+                    [ '2023-02-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-02-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-02-01', '00:00', 'kwh', '8radc', '0.18370' ],
+                    [ '2023-02-01', '06:00', 'kwh', '8radc', '0.55110' ],
+                    [ '2023-02-01', '17:00', 'kwh', '8radc', '1.65330' ],
+                    [ '2023-02-01', '21:00', 'kwh', '8radc', '0.55110' ],
+                    [ '2023-02-01', '00:00', 'month', '9subsc', '44.75' ],
+
+                    [ '2023-03-01', '00:00', 'kwh', '2general', '0.00800' ],
+                    [ '2023-03-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-03-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-03-01', '00:00', 'kwh', '8radc', '0.15090' ],
+                    [ '2023-03-01', '06:00', 'kwh', '8radc', '0.45280' ],
+                    [ '2023-03-01', '17:00', 'kwh', '8radc', '1.35840' ],
+                    [ '2023-03-01', '21:00', 'kwh', '8radc', '0.45280' ],
+                    [ '2023-03-01', '00:00', 'month', '9subsc', '44.75' ],
+
+                    [ '2023-04-01', '00:00', 'kwh', '2general', '0.00800' ],
+                    [ '2023-04-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-04-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-04-01', '00:00', 'kwh', '8radc', '0.15090' ],
+                    [ '2023-04-01', '06:00', 'kwh', '8radc', '0.22640' ],
+                    [ '2023-04-01', '17:00', 'kwh', '8radc', '0.58870' ],
+                    [ '2023-04-01', '21:00', 'kwh', '8radc', '0.22640' ],
+                    [ '2023-04-01', '00:00', 'month', '9subsc', '44.75' ],
+
+                    [ '2023-07-01', '00:00', 'kwh', '2general', '0.69700' ],
+                    [ '2023-07-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-07-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-07-01', '00:00', 'kwh', '8radc', '0.15090' ],
+                    [ '2023-07-01', '06:00', 'kwh', '8radc', '0.22640' ],
+                    [ '2023-07-01', '17:00', 'kwh', '8radc', '0.58870' ],
+                    [ '2023-07-01', '21:00', 'kwh', '8radc', '0.22640' ],
+                    [ '2023-07-01', '00:00', 'month', '9subsc', '44.75' ],
+
+                    [ '2023-10-01', '00:00', 'kwh', '2general', '0.69700' ],
+                    [ '2023-10-01', '00:00', 'kwh', '5system', '0.05400' ],
+                    [ '2023-10-01', '00:00', 'kwh', '6transm', '0.05800' ],
+                    [ '2023-10-01', '00:00', 'kwh', '8radc', '0.15090' ],
+                    [ '2023-10-01', '06:00', 'kwh', '8radc', '0.45280' ],
+                    [ '2023-10-01', '17:00', 'kwh', '8radc', '1.35840' ],
+                    [ '2023-10-01', '21:00', 'kwh', '8radc', '0.45280' ],
+                    [ '2023-10-01', '00:00', 'month', '9subsc', '44.75' ],
                 ];
-                for (let i = 0; i < lines.length; i++) {
-                    let j = metering_point_id + '_' + i;
-                    let [d_, b_, e_, i_, j_] = lines[i];
-                    this.post.set('d_charge_' + j, d_);
-                    this.post.set('b_charge_' + j, b_);
-                    this.post.set('e_charge_' + j, e_);
-                    this.post.set('i_charge_' + j, i_);
-                    this.post.set('j_charge_' + j, j_);
+                this.post = new Map();
+                if (profile == 'elfexcl' || profile == 'elfincl')  {
+                    for (let i = 0; i < lines.length; i++) {
+                        let j = metering_point_id + '_' + i;
+                        let [dv, bv, iv, tv, pv] = lines[i];
+                        if (profile == 'elfexcl' && tv == '2general') {
+                            continue;
+                        }
+                        this.post.set('dk_' + j, dv);
+                        this.post.set('bk_' + j, bv);
+                        this.post.set('ik_' + j, iv);
+                        this.post.set('tk_' + j, tv);
+                        this.post.set('pk_' + j, pv);
+                    }
                 }
-                this.charge_count = lines.length;
             }
             let charges = {};
-            let c_list = ['e_', 'i_', 'j_'];
             for (let [key, val] of this.post) {
-                let pk = key.substring(0, 2);
+                // console.log(key + ': ' + val);
                 if (key == 'refresh_token') {
                     val = val.trim();
                     this.post.set(key, val);
@@ -85,57 +145,46 @@ class Settings extends Page {
                         return;
                     }
                 }
-                if (pk == 'd_' && val !== '') {
+                let prefix = key.substring(0, 3);
+                if (prefix == 'dk_' && val !== '') {
                     if (!val.match(/^\d\d\d\d-\d\d-\d\d/)) {
                         this.error = 'Datoformat skal være åååå-mmm-dd';
                         return;
                     }
-                    let k = key.replaceAll('d_', 'b_');
-                    let b_val = this.post.get(k);
-                    if (!b_val) {
-                        b_val = '00:00';
+                    let sort_key = '';
+                    for (let prefix of ['dk_', 'tk_', 'bk_', 'ik_']) {
+                        let k = key.replace('dk_', prefix);
+                        sort_key += this.post.get(k) + ' ';
                     }
-                    let sort_key = val + ' ' + b_val;
-                    for (let c of c_list) {
-                        let k = key.replaceAll('d_', c);
-                        let v = this.post.get(k);
-                        v = v.replaceAll(',', '.');
-                        v = parseFloat(v).toString();
-                        v = Math.round(v * 1000000) / 1000000;
-                        v = v.toString().replaceAll('.', ',');
-                        if (!charges[sort_key]) {
-                            charges[sort_key] = [];
-                        }
-                        charges[sort_key].push(v);
-                    }
+                    let k = key.replace('dk_', 'pk_');
+                    let v = this.post.get(k);
+                    v = 0 + v.replace(',', '.');
+                    v = parseFloat(v).toString();
+                    v = Math.round(v * 1000000) / 1000000;
+                    v = v.toString().replace('.', ',');
+                    charges[sort_key] = v;
                 }
             }
             let keys = Object.keys(charges).sort();
-            for (let i = 0; i < this.charge_count; i++) {
+            let data = {};
+            for (let i = 0; i < keys.length; i++) {
                 let key = keys[i];
                 let value = charges[key];
-                let dv;
-                let bv;
-                if (key) {
-                    dv = key;
-                    bv = key.substring(11);
-                } else {
-                    dv = '';
-                    bv = '';
-                }
-                let j = metering_point_id + '_' + i;
-                this.SetStorage('d_charge_' + j, dv);
-                this.SetStorage('b_charge_' + j, bv);
-                for (const c of c_list) {
-                    let v;
-                    if (value) {
-                        v = value.shift();
-                    } else {
-                        v = '';
+                let d = data;
+                let ix = key.split(' ');
+                for (let j = 0; j < ix.length; j++) {
+                    let k = ix[j];
+                    if (j == ix.length - 2) {
+                        d[k] = value;
+                        break;
                     }
-                    this.SetStorage(c + 'charge_' + j, v);
+                    if (!d[k]) {
+                        d[k] = {};
+                    }
+                    d = d[k];
                 }
             }
+            this.SetStorage('charge_' + metering_point_id, data);
             let refresh_token = this.GetStorage('refresh_token');
             if (refresh_token != old_refresh_token) {
                 this.SetStorage('token', '');
@@ -204,22 +253,85 @@ class Settings extends Page {
         this.Display();
     }
 
+    InputSelectCell(tr, name, value, options) {
+        let td = tr.Td();
+        let select = td.Select();
+        select.class('form-select');
+        select.name(name);
+        for (let option of options) {
+            let key;
+            let val;
+            if (Array.isArray(option)) {
+                [key, val] = option;
+            } else {
+                key = val = option;
+            }
+            option = select.Option(key);
+            option.value(val);
+            if (val == value) {
+                option.selected('true');
+            }
+        }
+        return select;
+    }
+
+    InputCell(tr, name, value, text = null) {
+        let td = tr.Td();
+        let input = td.Input();
+        input.class('form-control');
+        input.name(name);
+        input.type('text');
+        input.value(value);
+        input.size('10');
+        if (text) {
+            td.Div(text).class('form-text');
+        }
+        return input;
+    }
+
+    InputRow(table, j, dk = '', bk = '', ik = '', tk = '', tv = '') {
+        let b_options = [];
+        for (let i = 0; i < 24; i++) {
+            let val = ('0' + i).slice(-2) + ':00';
+            b_options.push(val);
+        }
+        let i_options = [
+            [ 'Pr. kWh', 'kwh' ],
+            [ 'Pr. dag', 'day' ],
+            [ 'Pr. måned', 'month' ]
+        ];
+        let t_options = [
+            [ 'Netselskab Radius C', '8radc' ],
+            [ 'Elafgift', '2general' ],
+            [ 'Balancetarif', '3balance' ],
+            [ 'PSO-tarif', '4pso' ],
+            [ 'Systemtarif', '5system' ],
+            [ 'Transmissionsnetafgift', '6transm' ],
+            [ 'Abonnement', '9subsc' ]
+        ];
+        let tr = table.Tr();
+        this.InputCell(tr, 'dk_' + j, dk);  // Date
+        this.InputSelectCell(tr, 'bk_' + j, bk, b_options);  // Time
+        this.InputSelectCell(tr, 'ik_' + j, ik, i_options);  // Interval
+        this.InputSelectCell(tr, 'tk_' + j, tk, t_options);  // Type
+        this.InputCell(tr, 'pk_' + j, tv);  // Price
+    }
+
     Contents(body, title = '') {
         // console.log(this.GetStorage('metering_points'));
-        this.SetChargeCount();
         let div = super.Contents(body, 'Indstillinger');
         this.InputField(div, 'Refresh token', 'refresh_token');
-        let select = this.InputSelect(
+        this.InputSelect(
             div,
             'price_area',
-            ['DK1', 'DK2'],
+            [ 'DK1', 'DK2' ],
             'Prisområde (DK1/DK2)',
             'DK1 er Danmark vest, DK2 er Danmark øst'
         );
         let metering_point_id = this.GetStorage('metering_point_id', '');
         let metering_points = this.GetStorage('metering_points');
         if (metering_points.length) {
-            let select = this.InputSelect(
+            this.InputSelect(
                 div,
                 'metering_point_id',
                 metering_points,
@@ -228,39 +340,47 @@ class Settings extends Page {
         }
         div.H2('Omkostninger i kr. ekskl. moms').class('text-center');
         div.Br();
+        let profiles = [
+            [ 'Nulstil', 'blank' ],
+            [ 'Elforbundet inkl. elafgift', 'elfincl' ],
+            [ 'Elforbundet ekskl. elafgift', 'elfexcl' ],
+        ];
+        this.InputSelect(div, 'profile', profiles, 'Profil');
+        let rdiv = div.Last('div');
+        rdiv.First('div').class('col-sm-4');
+        let bdiv = rdiv.Div();
+        bdiv.class('col-sm-3');
+        let button = this.SubmitButton(bdiv, 'Brug data for profil', 'profile');
+        button.class('btn-secondary');
         let table = div.Table();
         table.class('charges');
         let tr = table.Tr();
         tr.class('text-center');
         let th = tr.Th('Startdato');
-        th = tr.Th('Tidsinterval<br>Start');
-        th = tr.Th('Pr. kWh');
-        th = tr.Th('Pr. døgn');
-        th = tr.Th('Pr. måned');
-        let b_options = [''];
-        for (let i = 0; i < 24; i++) {
-            let val = ('0' + i).slice(-2) + ':00';
-            b_options.push(val);
+        th = tr.Th('Tidspunkt');
+        th = tr.Th('Interval');
+        th = tr.Th('Type');
+        th = tr.Th('Pris');
+        let data = this.GetStorage('charge_' + metering_point_id);
+        let j = 0;
+        for (let [dk, dv] of Object.entries(data)) {
+            for (let [tk, tv] of Object.entries(dv)) {
+                for (let [bk, bv] of Object.entries(tv)) {
+                    for (let [ik, iv] of Object.entries(bv)) {
+                        this.InputRow(table, j++, dk, bk, ik, tk, iv);
+                    }
+                }
+            }
         }
-        for (let i = 0; i < this.charge_count; i++) {
-            let j = metering_point_id + '_' + i;
-            let sort_key = this.GetStorage('d_charge_' + j);
-            this.SetStorage('d_charge_' + j, sort_key.substring(0, 10));
-            let tr = table.Tr();
-            this.InputCell(tr, 'd_charge_' + j);  // Date
-            this.InputSelectCell(tr, 'b_charge_' + j, b_options);  // First
-            this.InputCell(tr, 'e_charge_' + j);  // Energi
-            this.InputCell(tr, 'i_charge_' + j);  // Daily
-            this.InputCell(tr, 'j_charge_' + j);  // Monthly
-        }
+        this.InputRow(table, j++);
         div.Br();
         div.P(`
             Startdatoen angiver starten af perioden.
             Perioden stopper, når næste startdato er den aktuelle`
         );
-        this.CheckBox(div, 'default', 'Udfyld konfiguration automatisk');
-        this.CheckBox(div, 'force', 'Nulstil midlertidige data');
         this.SubmitButton(div);
+        button = this.SubmitButton(div, 'Nulstil midlertidige data', 'tmp');
+        button.class('btn btn-warning');
     }
 
     Display() {

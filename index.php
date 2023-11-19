@@ -69,6 +69,9 @@ class Index
         if ($json) {
             header('Cache-Control: no-store, no-cache, must-revalidate');
             $data = json_decode($json);
+            if (empty($data->action)) {
+                return;
+            }
             switch ($data->action) {
                 case 'token':
                     $this->token = $data->token;

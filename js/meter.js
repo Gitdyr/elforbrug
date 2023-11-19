@@ -640,24 +640,47 @@ class Meter extends Page {
     }
 
     GetCharges(time, metering_point_id) {
-        let dv = 0;
-        let ev = 0;
-        let iv = 0;
-        let jv = 0;
-        for (let i = 0; i < this.charge_count; i++) {
-            let j = metering_point_id + '_' + i;
-            dv = this.GetStorage('d_charge_' + j);
-            if (dv && time.slice(0, 10) >= dv.slice(0, 10)) {
-                if (time.slice(11) >= dv.slice(11)) {
-                    ev = this.GetStorage('e_charge_' + j);
-                    iv = this.GetStorage('i_charge_' + j);
-                    jv = this.GetStorage('j_charge_' + j);
+        let ed = {};  // Per kwh
+        let id = {};  // Per day
+        let jd = {};  // Per month
+        let data = this.GetStorage('charge_' + metering_point_id);
+        for (let [dk, dv] of Object.entries(data)) {
+            if (dk > time.slice(0, 10)) {
+                break;
+            }
+            ed = {};
+            id = {};
+            jd = {};
+            for (let [tk, tv] of Object.entries(dv)) {
+                for (let [bk, bv] of Object.entries(tv)) {
+                    if (bk > time.slice(11)) {
+                        break;
+                    }
+                    for (let [ik, iv] of Object.entries(bv)) {
+                        iv = parseFloat(iv.toString().replace(',', '.'));
+                        if (ik == 'kwh') {
+                            ed[tk] = iv;
+                        } else if (ik == 'day') {
+                            id[tk] = iv;
+                        } else if (ik == 'month') {
+                            jd[tk] = iv;
+                        }
+                    }
                 }
             }
         }
-        ev = parseFloat(ev.toString().replace(',', '.'));
-        iv = parseFloat(iv.toString().replace(',', '.'));
-        jv = parseFloat(jv.toString().replace(',', '.'));
+        let ec = 0;
+        let ic = 0;
+        let jc = 0;
+        for (let [k, v] of Object.entries(ed)) {
+            ec += v;
+        }
+        for (let [k, v] of Object.entries(id)) {
+            ic += v;
+        }
+        for (let [k, v] of Object.entries(jd)) {
+            jc += v;
+        }
         let date = new Date(time);
         let date1;
         let date2;
@@ -667,9 +690,9 @@ class Meter extends Page {
         date1 = new Date(date.getFullYear(), date.getMonth(), 0);
         date2 = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         let hpm = (date2 - date1) / 1000 / 3600;
-        iv = iv / hpd;
-        jv = jv / hpm;
-        return [ev, iv, jv];
+        ic = ic / hpd;
+        jc = jc / hpm;
+        return [ec, ic, jc];
     }
     
     ShowMeter() {

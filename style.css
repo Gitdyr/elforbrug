@@ -23,3 +23,7 @@ div.card, header {
 .flip img {
     transform: scaleX(-1);
 }
+
+button.btn-primary {
+    margin-right: 5px;
+}

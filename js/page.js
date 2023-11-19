@@ -11,30 +11,12 @@ class Page {
     info = false;
     saved_info = false;
     detail = false;
-    charge_count = 5;
     post = new Map();
 
     constructor() {
         let page = this.GetPage();
         if (page == this.constructor.name.toLowerCase()) {
             window.onload = () => this.Display();
-        }
-    }
-
-    SetChargeCount() {
-        let i;
-        let metering_point_id = this.GetStorage('metering_point_id', '');
-        for (i = 0; i < 100; i++) {
-            let j = metering_point_id + '_' + i;
-            if (!this.GetStorage('d_charge_' + j)) {
-                break;
-            }
-        }
-        if (this.charge_count == i + 1) {
-            this.charge_count_changed = false;
-        } else {
-            this.charge_count = i + 1;
-            this.charge_count_changed = true;
         }
     }
 
@@ -231,42 +213,6 @@ class Page {
         return select;
     }
 
-    InputSelectCell(tr, name, options) {
-        let td = tr.Td();
-        let select = td.Select();
-        select.class('form-select');
-        select.name(name);
-        for (let option of options) {
-            let key;
-            let value;
-            if (Array.isArray(option)) {
-                [key, value] = option;
-            } else {
-                key = value = option;
-            }
-            option = select.Option(key);
-            option.value(value);
-            if (value == this.GetStorage(name)) {
-                option.selected('true');
-            }
-        }
-        return select;
-    }
-
-    InputCell(tr, name, text = null) {
-        let td = tr.Td();
-        let input = td.Input();
-        input.class('form-control');
-        input.name(name);
-        input.type('text');
-        input.value(this.GetStorage(name));
-        input.size('10');
-        if (text) {
-            td.Div(text).class('form-text');
-        }
-        return input;
-    }
-
     CheckBox(div, name, text = null) {
         div = div.Div();
         div.class('form-check');
@@ -286,10 +232,14 @@ class Page {
         return checkbox;
     }
 
-    SubmitButton(div) {
-        let button = div.Button('Gem');
+    SubmitButton(div, text = 'Gem', name = null) {
+        let button = div.Button(text);
         button.type('submit');
-        button.class('btn btn-primary float-end');
+        if (name) {
+            button.type(name);
+        }
+        button.class('btn btn-primary');
+        return button;
     }
 
     Navigation(body) {
@@ -419,6 +369,8 @@ class Page {
                 this.post.set(input.name, input.value);
             }
         }
+        let submitter = e.submitter.attributes.type.value.split(' ');
+        this.post.set('submitter', submitter.slice(-1));
         this.Display();
         e.preventDefault();
     }
@@ -438,7 +390,6 @@ class Page {
     Display() {
         window.onresize = null;
         this.RestoreStorage();
-        this.SetChargeCount();
         this.HandlePost();
         this.html = new HtmlNode();
         // this.Header();
@@ -453,14 +404,6 @@ class Page {
                 {
                     item.onclick = (e) => this.ItemSelected(e);
                 }
-            }
-        }
-        if (this.post.size && this.charge_count_changed) {
-            let tables = document.getElementsByClassName('charges'); 
-            if (tables.length) {
-                let tr = tables[0].firstChild.lastChild;
-                let input = tr.firstChild.firstChild;
-                input.focus();
             }
         }
         this.saved_info = this.info;

@@ -651,6 +651,9 @@ class Meter extends Page {
                 break;
             }
         }
+        if (!dv) {
+            return [0, 0, 0];
+        }
         for (let [tk, tv] of Object.entries(dv)) {
             let bk;
             let bv;

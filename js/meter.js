@@ -640,46 +640,35 @@ class Meter extends Page {
     }
 
     GetCharges(time, metering_point_id) {
-        let ed = {};  // Per kwh
-        let id = {};  // Per day
-        let jd = {};  // Per month
+        let ec = 0;  // Per kwh
+        let ic = 0;  // Per day
+        let jc = 0;  // Per month
         let data = this.GetStorage('charge_' + metering_point_id);
-        for (let [dk, dv] of Object.entries(data)) {
-            if (dk > time.slice(0, 10)) {
+        let dk;
+        let dv;
+        for ([dk, dv] of Object.entries(data).reverse()) {
+            if (dk < time.slice(0, 10)) {
                 break;
             }
-            ed = {};
-            id = {};
-            jd = {};
-            for (let [tk, tv] of Object.entries(dv)) {
-                for (let [bk, bv] of Object.entries(tv)) {
-                    if (bk > time.slice(11)) {
-                        break;
-                    }
-                    for (let [ik, iv] of Object.entries(bv)) {
-                        iv = parseFloat(iv.toString().replace(',', '.'));
-                        if (ik == 'kwh') {
-                            ed[tk] = iv;
-                        } else if (ik == 'day') {
-                            id[tk] = iv;
-                        } else if (ik == 'month') {
-                            jd[tk] = iv;
-                        }
-                    }
+        }
+        for (let [tk, tv] of Object.entries(dv)) {
+            let bk;
+            let bv;
+            for ([bk, bv] of Object.entries(tv).reverse()) {
+                if (bv && bk < time.slice(11)) {
+                    break;
                 }
             }
-        }
-        let ec = 0;
-        let ic = 0;
-        let jc = 0;
-        for (let [k, v] of Object.entries(ed)) {
-            ec += v;
-        }
-        for (let [k, v] of Object.entries(id)) {
-            ic += v;
-        }
-        for (let [k, v] of Object.entries(jd)) {
-            jc += v;
+            for (let [ik, iv] of Object.entries(bv)) {
+                iv = parseFloat(iv.toString().replace(',', '.'));
+                if (ik == 'kwh') {
+                    ec += iv;
+                } else if (ik == 'day') {
+                    ic += iv;
+                } else if (ik == 'month') {
+                    jc += iv;
+                }
+            }
         }
         let date = new Date(time);
         let date1;

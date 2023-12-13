@@ -106,11 +106,29 @@ class Settings extends Page {
                     [ '2023-10-01', '00:00', 'kwh', '2general', '0.69700' ],
                     [ '2023-10-01', '00:00', 'kwh', '5system', '0.05400' ],
                     [ '2023-10-01', '00:00', 'kwh', '6transm', '0.05800' ],
-                    [ '2023-10-01', '00:00', 'kwh', '8radc', '0.15090' ],
-                    [ '2023-10-01', '06:00', 'kwh', '8radc', '0.45280' ],
-                    [ '2023-10-01', '17:00', 'kwh', '8radc', '1.35840' ],
-                    [ '2023-10-01', '21:00', 'kwh', '8radc', '0.45280' ],
+                    [ '2023-10-01', '00:00', 'kwh', '8radc', '0.12150' ],
+                    [ '2023-10-01', '06:00', 'kwh', '8radc', '0.36450' ],
+                    [ '2023-10-01', '17:00', 'kwh', '8radc', '1.09340' ],
+                    [ '2023-10-01', '21:00', 'kwh', '8radc', '0.36450' ],
                     [ '2023-10-01', '00:00', 'month', '9subsc', '44.75' ],
+
+                    [ '2024-01-01', '00:00', 'kwh', '2general', '0.76100' ],
+                    [ '2024-01-01', '00:00', 'kwh', '5system', '0.05100' ],
+                    [ '2024-01-01', '00:00', 'kwh', '6transm', '0.07400' ],
+                    [ '2024-01-01', '00:00', 'kwh', '8radc', '0.12150' ],
+                    [ '2024-01-01', '06:00', 'kwh', '8radc', '0.36450' ],
+                    [ '2024-01-01', '17:00', 'kwh', '8radc', '1.09340' ],
+                    [ '2024-01-01', '21:00', 'kwh', '8radc', '0.36450' ],
+                    [ '2024-01-01', '00:00', 'month', '9subsc', '48.00' ],
+
+                    [ '2024-04-01', '00:00', 'kwh', '2general', '0.76100' ],
+                    [ '2024-04-01', '00:00', 'kwh', '5system', '0.05100' ],
+                    [ '2024-04-01', '00:00', 'kwh', '6transm', '0.07400' ],
+                    [ '2024-04-01', '00:00', 'kwh', '8radc', '0.12150' ],
+                    [ '2024-04-01', '06:00', 'kwh', '8radc', '0.18220' ],
+                    [ '2024-04-01', '17:00', 'kwh', '8radc', '0,47380' ],
+                    [ '2024-04-01', '21:00', 'kwh', '8radc', '0.18220' ],
+                    [ '2024-04-01', '00:00', 'month', '9subsc', '48.00' ],
                 ];
                 this.post = new Map();
                 if (profile == 'elfexcl' || profile == 'elfincl')  {
@@ -118,7 +136,7 @@ class Settings extends Page {
                         let j = metering_point_id + '_' + i;
                         let [dv, bv, iv, tv, pv] = lines[i];
                         if (profile == 'elfexcl' && tv == '2general') {
-                            continue;
+                            pv = '0.008';
                         }
                         this.post.set('dk_' + j, dv);
                         this.post.set('bk_' + j, bv);
@@ -342,8 +360,8 @@ class Settings extends Page {
         div.Br();
         let profiles = [
             [ 'Nulstil', 'blank' ],
-            [ 'Elforbundet inkl. elafgift', 'elfincl' ],
-            [ 'Elforbundet ekskl. elafgift', 'elfexcl' ],
+            [ 'Elforbundet med elafgift', 'elfincl' ],
+            [ 'Elforbundet uden elafgift', 'elfexcl' ],
         ];
         this.InputSelect(div, 'profile', profiles, 'Profil');
         let rdiv = div.Last('div');

@@ -369,7 +369,7 @@ class Meter extends Page {
         let [day, mon, year] = ldate.split('.');
         mon = ('0' + mon).slice(-2);
         day = ('0' + day).slice(-2);
-        ldate = [year , mon, day].join('-');
+        ldate = [year, mon, day].join('-');
         let ltime = date.toLocaleTimeString('da-DK');
         ltime = ltime.replaceAll('.', ':');
         return ldate + ' ' + ltime;
@@ -549,6 +549,7 @@ class Meter extends Page {
         let now = this.GetLocalTime(Date.now());
         if (Object.keys(prices).length && now <= next_price_update) {
             // All data cached
+            console.log('all prices cached ' + next_price_update);
             return prices;
         }
         // stop = this.GetLocalTime(Date.now() + (24 + 11) * 3600 * 1000);
@@ -598,6 +599,7 @@ class Meter extends Page {
         let first = this.Get('first');
         if (Object.keys(qtys).length && now <= next_qty_update && !first) {
             // All data cached
+            console.log('all qtys cached ' + next_qty_update);
             return qtys;
         }
         this.SetStorage('next_qty_update_' + metering_point_id, now);
@@ -647,7 +649,7 @@ class Meter extends Page {
         let dk;
         let dv;
         for ([dk, dv] of Object.entries(data).reverse()) {
-            if (dk < time.slice(0, 10)) {
+            if (dk <= time.slice(0, 10)) {
                 break;
             }
         }
@@ -658,7 +660,7 @@ class Meter extends Page {
             let bk;
             let bv;
             for ([bk, bv] of Object.entries(tv).reverse()) {
-                if (bv && bk < time.slice(11)) {
+                if (bv && bk <= time.slice(11, 16)) {
                     break;
                 }
             }

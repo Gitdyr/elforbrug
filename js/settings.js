@@ -237,7 +237,7 @@ class Settings extends Page {
                     action: 'points',
                     token: token
                 };
-                this.DoAjax(data, this.PointsCallback);
+                this.DoAjax(data, (r) => this.PointsCallback(r));
             }
         }
     }
@@ -413,7 +413,7 @@ class Settings extends Page {
 
     Display() {
         super.Display();
-        let select = document.getElementsByTagName('select')[1];
+        let select = document.getElementsByName('metering_point_id')[0];
         if (select) {
             select.onchange = ev => this.MpChanged(ev);
         }

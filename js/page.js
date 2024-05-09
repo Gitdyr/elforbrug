@@ -68,7 +68,7 @@ class Page {
         if (href == null) {
             href = name.toLowerCase();
         }
-        href += '.php';
+        href += '.html';
         if (page) {
             href += '?page=' + page;
         }
@@ -250,7 +250,7 @@ class Page {
         div.class('container-fluid');
         let a = div.A('Elforbrug');
         a.class('navbar-brand nav-link');
-        a.href('index.php');
+        a.href('index.html');
         let ul = div.Ul();
         ul.class('navbar-nav me-auto');
 
@@ -424,14 +424,57 @@ class Page {
     }
 
     DoAjax(data = [], load, progress = null) {
-        let url = 'index.php';
+        let url;
         let xhttp = new XMLHttpRequest();
+        let method = 'GET';
+        let eloverblik = 'https://api.eloverblik.dk/customerapi/api';
+        let elspot = 'https://api.energidataservice.dk/dataset/Elspotprices';
+        let json_data = null;
+        console.log('action: ' + data.action);
+        if (data.action == 'token') {
+            url = eloverblik + '/token';
+        } else if (data.action == 'points') {
+            url = eloverblik + '/meteringpoints/meteringpoints';
+        } else if (data.action == 'quantity') {
+            let start = new Date(data.start);
+            let stop = new Date(data.stop);
+            url = eloverblik + '/meterdata/gettimeseries';
+            url += '/' + start.toISOString().substr(0, 10);
+            url += '/' + stop.toISOString().substr(0, 10);
+            url += '/Hour';
+            json_data = JSON.stringify({
+                meteringPoints: {
+                    meteringPoint: [data.id]
+                }
+            });
+            console.log(json_data);
+            method = 'POST';
+        } else if (data.action == 'prices') {
+            console.log(data);
+            let start = new Date(data.start);
+            let stop = new Date(data.stop);
+            url = new URL(elspot);
+            json_data = null;
+            url.searchParams.set('offset', 0);
+            url.searchParams.set('sort', 'HourUTC asc');
+            url.searchParams.set('timezone', 'utc');
+            url.searchParams.set('start', start.toISOString().substr(0, 16));
+            url.searchParams.set('end', stop.toISOString().substr(0, 16));
+            url.searchParams.set('filter', '{"PriceArea":"' + data.area + '"}');
+            url = url.href;
+        }
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
             }
         };
-        xhttp.open('POST', url, true);
+        console.log({
+            url: url,
+            method: method,
+            json_data: json_data
+        });
+        xhttp.open(method, url, true);
         xhttp.setRequestHeader('Content-type', 'application/json');
+        xhttp.setRequestHeader('Authorization', 'Bearer ' + data.token);
         xhttp.onload = function() {
             let response;
             if (this.responseText) {
@@ -453,7 +496,7 @@ class Page {
                 progress(e, this);
             }
         }
-        xhttp.send(JSON.stringify(data));
+        xhttp.send(json_data);
     }
 
     TokenCallback(data) {

@@ -535,7 +535,7 @@ class Meter extends Page {
             return null;
         }
         let prices = this.GetStorage('prices', {});
-        let start = '2019-01-01';
+        let start = '2024-05-01';
         start = this.GetLastDate(prices, start);
         let stop;
         let next_price_update = this.GetStorage('next_price_update');
@@ -587,7 +587,7 @@ class Meter extends Page {
             qtys[metering_point_id] = {};
         }
         qtys = qtys[metering_point_id];
-        let start = '2019-01-01';
+        let start = '2024-05-01';
         start = this.GetLastDate(qtys, start);
         let stop;
         let next_qty_update =

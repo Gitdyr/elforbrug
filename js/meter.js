@@ -352,13 +352,19 @@ class Meter extends Page {
         this.datasets.push(dataset);
     }
 
-    GetLastDate(list, def = null) {
+    GetLastDate(list) {
         let date;
         let values = Object.values(list);
         if (values.length > 0) {
             date = values.at(-1)[0][0].slice(0, 10);
         } else {
-            date = def;
+            // Two years back
+            date = new Date();
+            date.setFullYear(date.getFullYear() - 2);
+            date.setMonth(0);
+            date.setDate(1);
+            date = this.GetLocalTime(date).slice(0, 10)
+            console.log(date);
         }
         return date;
     }
@@ -535,8 +541,7 @@ class Meter extends Page {
             return null;
         }
         let prices = this.GetStorage('prices', {});
-        let start = '2024-05-01';
-        start = this.GetLastDate(prices, start);
+        let start = this.GetLastDate(prices);
         let stop;
         let next_price_update = this.GetStorage('next_price_update');
         let date = new Date(start);
@@ -587,8 +592,7 @@ class Meter extends Page {
             qtys[metering_point_id] = {};
         }
         qtys = qtys[metering_point_id];
-        let start = '2024-05-01';
-        start = this.GetLastDate(qtys, start);
+        let start = this.GetLastDate(qtys);
         let stop;
         let next_qty_update =
             this.GetStorage('next_qty_update_' + metering_point_id);

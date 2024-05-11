@@ -364,7 +364,6 @@ class Meter extends Page {
             date.setMonth(0);
             date.setDate(1);
             date = this.GetLocalTime(date).slice(0, 10)
-            console.log(date);
         }
         return date;
     }

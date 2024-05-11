@@ -430,7 +430,6 @@ class Page {
         let eloverblik = 'https://api.eloverblik.dk/customerapi/api';
         let elspot = 'https://api.energidataservice.dk/dataset/Elspotprices';
         let json_data = null;
-        console.log('action: ' + data.action);
         if (data.action == 'token') {
             url = eloverblik + '/token';
         } else if (data.action == 'points') {
@@ -447,10 +446,8 @@ class Page {
                     meteringPoint: [data.id]
                 }
             });
-            console.log(json_data);
             method = 'POST';
         } else if (data.action == 'prices') {
-            console.log(data);
             let start = new Date(data.start);
             let stop = new Date(data.stop);
             url = new URL(elspot);
@@ -464,7 +461,8 @@ class Page {
             url = url.href;
         }
         xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
+            if (this.readyState == 4 && this.status == 0) {
+                console.log(this);
             }
         };
         console.log({
@@ -473,7 +471,7 @@ class Page {
             json_data: json_data
         });
         xhttp.open(method, url, true);
-        xhttp.setRequestHeader('Content-type', 'application/json');
+        xhttp.setRequestHeader('Content-Type', 'application/json');
         xhttp.setRequestHeader('Authorization', 'Bearer ' + data.token);
         xhttp.onload = function() {
             let response;
@@ -486,8 +484,8 @@ class Page {
                     response = this.responseText;
                 }
             } else {
-                response = '';
-                console.log(this);
+                response = {error: this};
+                console.log(response);
             }
             load(response);
         }

@@ -495,7 +495,11 @@ class Meter extends Page {
             this.Display();
             return;
         }
+        let price_area = this.GetStorage('price_area');
         let prices = this.GetStorage('prices', {});
+        if (!prices[price_area]) {
+            prices[price_area] = {};
+        }
         let ldate = null;
         let ndx = 0;
         for (const record of data.records) {
@@ -506,13 +510,13 @@ class Meter extends Page {
                 ldate = date;
                 ndx = 0;
             }
-            if (!prices[ldate]) {
-                prices[ldate] = [];
+            if (!prices[price_area][ldate]) {
+                prices[price_area][ldate] = [];
             }
-            if (prices[ldate][ndx]) {
-                prices[ldate][ndx][2] = price;
+            if (prices[price_area][ldate][ndx]) {
+                prices[price_area][ldate][ndx][2] = price;
             } else {
-                prices[ldate].push([time, price]);
+                prices[price_area][ldate].push([time, price]);
             }
             ndx++;
         }
@@ -523,7 +527,7 @@ class Meter extends Page {
             time = this.GetLocalTime(Date.now() + 24 * 3600 * 1000);
         }
         next_price_update = time.slice(0, 11) + '13:00:00';
-        this.SetStorage('next_price_update', next_price_update);
+	this.SetStorage('next_price_update_' + price_area, next_price_update);
         this.SaveStorage();
         this.ShowMeter();
         delete this.price_pstart;
@@ -540,9 +544,14 @@ class Meter extends Page {
             return null;
         }
         let prices = this.GetStorage('prices', {});
+        if (!prices[price_area]) {
+            prices[price_area] = {};
+        }
+        prices = prices[price_area];
         let start = this.GetLastDate(prices);
         let stop;
-        let next_price_update = this.GetStorage('next_price_update');
+        let next_price_update =
+	    this.GetStorage('next_price_update_' + price_area);
         let date = new Date(start);
         let offset = date.getTimezoneOffset() * 60 * 1000;
         date = new Date(date.getTime() + offset);

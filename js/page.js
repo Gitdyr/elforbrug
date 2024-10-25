@@ -430,6 +430,8 @@ class Page {
         let eloverblik = 'https://api.eloverblik.dk/customerapi/api';
         let elspot = 'https://api.energidataservice.dk/dataset/Elspotprices';
         let json_data = null;
+        let relay = location.origin + location.pathname;
+        relay = relay.substr(0, relay.lastIndexOf('/')) + '/relay.php?';
         if (data.action == 'token') {
             url = eloverblik + '/token';
         } else if (data.action == 'points') {
@@ -459,6 +461,7 @@ class Page {
             url.searchParams.set('end', stop.toISOString().substr(0, 16));
             url.searchParams.set('filter', '{"PriceArea":"' + data.area + '"}');
             url = url.href;
+            url = relay + encodeURIComponent(url);
         }
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 0) {
